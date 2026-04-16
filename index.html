@@ -70,43 +70,36 @@
     font-size: 12px;
   }
 
-  .main { max-width: 860px; margin: 0 auto; padding: 16px; }
+  .main { max-width: 1000px; margin: 0 auto; padding: 16px; }
 
-  /* 單行橫向並排樣式 */
+  /* 調整為：網頁寬度內平均分配、居中、無滑軸 */
   .category-grid {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
+    display: grid;
+    /* 這裡使用 grid 讓 9 個欄位平均分配 */
+    grid-template-columns: repeat(9, 1fr); 
     gap: 8px;
-    margin-bottom: 20px;
-    padding: 4px 0 10px 0;
-    -webkit-overflow-scrolling: touch; /* 讓手機滑動更順暢 */
-  }
-  
-  /* 隱藏滾動條 (Chrome, Safari, Edge) */
-  .category-grid::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* 隱藏滾動條 (Firefox) */
-  .category-grid {
-    scrollbar-width: none;
+    margin-bottom: 24px;
+    justify-content: center;
+    width: 100%;
   }
 
   .cat-btn {
-    flex: 0 0 auto; /* 防止按鈕寬度被壓縮 */
-    padding: 8px 14px;
+    width: 100%;
+    padding: 10px 4px; /* 縮減左右內距以適應 9 欄 */
     border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 20px; /* 膠囊狀設計 */
+    border-radius: 20px;
     background: #fff;
-    color: #666;
-    font-size: 13px;
+    color: #555;
+    font-size: 12px; /* 稍微縮小字體確保單行能放下 */
     font-weight: 500;
     cursor: pointer;
     display: flex;
+    flex-direction: column; /* 垂直排列文字與數字 */
     align-items: center;
-    white-space: nowrap;
+    justify-content: center;
     transition: all 0.2s;
+    text-align: center;
+    line-height: 1.2;
   }
 
   .cat-btn:hover {
@@ -121,12 +114,12 @@
   }
 
   .cat-btn .count {
-    font-size: 11px;
-    margin-left: 6px;
+    font-size: 10px;
+    margin-top: 4px;
     opacity: 0.6;
     background: rgba(0,0,0,0.05);
-    padding: 1px 6px;
-    border-radius: 10px;
+    padding: 0px 6px;
+    border-radius: 8px;
   }
   
   .cat-btn.active .count {
@@ -135,7 +128,7 @@
   }
 
   /* 列表樣式 */
-  .section { animation: fadeIn 0.3s ease; }
+  .section { animation: fadeIn 0.3s ease; max-width: 860px; margin: 0 auto; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   
   .section-header {
@@ -162,6 +155,13 @@
   .detail-val { font-size: 14px; line-height: 1.5; margin-bottom: 10px; color: #333; }
 
   mark { background: #fff176; color: #000; border-radius: 2px; }
+
+  /* 手機版適配：如果螢幕太窄，自動轉為三列顯示以免按鈕擠爛 */
+  @media (max-width: 800px) {
+    .category-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
 </style>
 </head>
 <body>
@@ -355,7 +355,8 @@ function renderCats() {
   Object.entries(DATA).forEach(([cat, entries]) => {
     const btn = document.createElement('button');
     btn.className = 'cat-btn' + (activecat === cat ? ' active' : '');
-    btn.innerHTML = `${CAT_LABELS[cat] || cat} <span class="count">${entries.length}</span>`;
+    // 數字改到下方小字
+    btn.innerHTML = `<span>${CAT_LABELS[cat] || cat}</span><span class="count">${entries.length}</span>`;
     btn.onclick = () => {
       activecat = (activecat === cat) ? null : cat;
       query = '';
@@ -372,7 +373,6 @@ function render() {
   const container = document.getElementById('results');
   const q = query.toLowerCase().trim();
   
-  // 如果沒有分類也沒有搜尋，不顯示列表 (或你想預設全開也可以，現在是預設不顯示)
   if (!activecat && !q) {
     container.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#bbb; font-size:14px;">請選擇分類或輸入關鍵字搜尋</div>';
     return;
