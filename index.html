@@ -15,29 +15,27 @@
   .page-header {
     background: #fff;
     border-bottom: 0.5px solid rgba(0,0,0,0.1);
-    padding: 24px 24px 16px;
+    padding: 16px 24px 12px;
     position: sticky;
     top: 0;
     z-index: 100;
   }
   .page-header h1 {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 16px;
-    text-align: center;
+    margin-bottom: 12px;
   }
   .search-bar {
     position: relative;
     max-width: 860px;
-    margin: 0 auto;
   }
   .search-bar input {
     width: 100%;
-    padding: 12px 40px;
-    font-size: 16px;
+    padding: 10px 40px;
+    font-size: 15px;
     border: 1px solid rgba(0,0,0,0.15);
-    border-radius: 12px;
+    border-radius: 10px;
     background: #f9f9f8;
     outline: none;
     transition: all 0.2s;
@@ -49,11 +47,11 @@
   }
   .search-icon {
     position: absolute;
-    left: 14px;
+    left: 12px;
     top: 50%;
     transform: translateY(-50%);
     color: #888;
-    font-size: 18px;
+    font-size: 16px;
   }
   .clear-btn {
     position: absolute;
@@ -64,87 +62,106 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     display: none;
     align-items: center;
     justify-content: center;
+    font-size: 12px;
   }
 
-  .main { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+  .main { max-width: 860px; margin: 0 auto; padding: 16px; }
 
-  /* 九宮格樣式優化 */
+  /* 單行橫向並排樣式 */
   .category-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 4px 0 10px 0;
+    -webkit-overflow-scrolling: touch; /* 讓手機滑動更順暢 */
   }
+  
+  /* 隱藏滾動條 (Chrome, Safari, Edge) */
+  .category-grid::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* 隱藏滾動條 (Firefox) */
+  .category-grid {
+    scrollbar-width: none;
+  }
+
   .cat-btn {
-    aspect-ratio: 1 / 0.7; /* 讓按鈕呈現微扁的矩形 */
-    padding: 16px;
+    flex: 0 0 auto; /* 防止按鈕寬度被壓縮 */
+    padding: 8px 14px;
     border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 16px;
+    border-radius: 20px; /* 膠囊狀設計 */
     background: #fff;
-    color: #333;
-    font-size: 14px;
-    font-weight: 600;
+    color: #666;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
-    text-align: center;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    white-space: nowrap;
+    transition: all 0.2s;
   }
+
   .cat-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-    border-color: #1a1a1a;
+    background: #fafafa;
+    border-color: rgba(0,0,0,0.3);
   }
+
   .cat-btn.active {
     background: #1a1a1a;
     color: #fff;
     border-color: #1a1a1a;
   }
+
   .cat-btn .count {
-    font-size: 12px;
-    font-weight: 400;
-    margin-top: 8px;
-    padding: 2px 8px;
+    font-size: 11px;
+    margin-left: 6px;
+    opacity: 0.6;
     background: rgba(0,0,0,0.05);
+    padding: 1px 6px;
     border-radius: 10px;
   }
+  
   .cat-btn.active .count {
     background: rgba(255,255,255,0.2);
+    opacity: 1;
   }
 
   /* 列表樣式 */
-  .section { margin-top: 10px; animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .section { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   
   .section-header {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
-    color: #1a1a1a;
-    padding: 10px 0;
-    border-bottom: 2px solid #1a1a1a;
-    margin-bottom: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 10px;
   }
-  .entry { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; margin-bottom: 8px; }
-  .entry-header { display: flex; align-items: center; gap: 12px; padding: 14px; cursor: pointer; }
-  .abbr-tag { font-size: 15px; font-weight: 700; min-width: 100px; color: #1a1a1a; }
-  .full-preview { font-size: 14px; color: #666; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .entry-detail { display: none; padding: 14px; background: #fafafa; border-top: 0.5px solid #eee; border-radius: 0 0 10px 10px; }
+  
+  .entry { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; margin-bottom: 6px; }
+  .entry-header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+  .abbr-tag { font-size: 14px; font-weight: 700; min-width: 85px; color: #1a1a1a; }
+  .full-preview { font-size: 13px; color: #666; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chevron { font-size: 10px; color: #ccc; transition: transform 0.2s; }
+  .entry.open .chevron { transform: rotate(90deg); }
+  
+  .entry-detail { display: none; padding: 12px 14px; background: #fafafa; border-top: 0.5px solid #eee; border-radius: 0 0 10px 10px; }
   .entry.open .entry-detail { display: block; }
-  .detail-label { font-size: 11px; font-weight: 700; color: #999; margin-bottom: 4px; }
-  .detail-val { font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+  .detail-label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; margin-bottom: 4px; }
+  .detail-val { font-size: 14px; line-height: 1.5; margin-bottom: 10px; color: #333; }
 
-  @media (max-width: 600px) {
-    .category-grid { grid-template-columns: repeat(2, 1fr); }
-    .cat-btn { aspect-ratio: 1 / 0.6; }
-  }
+  mark { background: #fff176; color: #000; border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -153,7 +170,7 @@
   <h1>縮寫查詢表</h1>
   <div class="search-bar">
     <span class="search-icon">⌕</span>
-    <input type="text" id="search" placeholder="輸入關鍵字..." autocomplete="off" />
+    <input type="text" id="search" placeholder="搜尋縮寫、英文或中文..." autocomplete="off" />
     <button class="clear-btn" id="clear-btn">×</button>
   </div>
 </div>
@@ -164,7 +181,6 @@
 </div>
 
 <script>
-// 此處保留你原始的 DATA 和 CAT_LABELS 內容
 const DATA = {
   "Schedule / Phase": [
     {abbr:"NUDD",full:"New, Unique, Different, Difficult",zh:""},
@@ -178,7 +194,7 @@ const DATA = {
     {abbr:"EVT",full:"Engineering Verification Test",zh:"工程驗證測試"},
     {abbr:"PVT",full:"Production Verification Test",zh:"生產驗證測試"},
     {abbr:"PPAP",full:"Production Part Approval Process",zh:"樣品生產承認流程"},
-    {abbr:"GA",full:"General Availability",zh:"產品已完成所有必要的開發和測試工作，達到市場投放的標準。"},
+    {abbr:"GA",full:"General Availability",zh:"產品已完成開發，達到市場投放標準。"},
     {abbr:"EC",full:"Engineering Change",zh:"設計/工程變更"},
     {abbr:"ESP",full:"Early Ship Program",zh:""},
     {abbr:"RFI",full:"Ready to Integrate",zh:""},
@@ -327,23 +343,20 @@ let activecat = null;
 let query = '';
 let openEntries = new Set();
 
-// 高亮關鍵字
 function hl(text, q) {
   if (!q) return text;
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
 }
 
-// 渲染九宮格分類
 function renderCats() {
   const grid = document.getElementById('cat-grid');
   grid.innerHTML = '';
   Object.entries(DATA).forEach(([cat, entries]) => {
     const btn = document.createElement('button');
     btn.className = 'cat-btn' + (activecat === cat ? ' active' : '');
-    btn.innerHTML = `<span>${CAT_LABELS[cat] || cat}</span><span class="count">${entries.length}</span>`;
+    btn.innerHTML = `${CAT_LABELS[cat] || cat} <span class="count">${entries.length}</span>`;
     btn.onclick = () => {
-      // 如果點擊已選中的，就取消選中（回到首頁）
       activecat = (activecat === cat) ? null : cat;
       query = '';
       document.getElementById('search').value = '';
@@ -354,15 +367,14 @@ function renderCats() {
   });
 }
 
-// 渲染結果列表
 function render() {
   renderCats();
   const container = document.getElementById('results');
   const q = query.toLowerCase().trim();
   
-  // 如果既沒有選擇分類，也沒有搜尋文字，就不顯示任何內容
+  // 如果沒有分類也沒有搜尋，不顯示列表 (或你想預設全開也可以，現在是預設不顯示)
   if (!activecat && !q) {
-    container.innerHTML = '';
+    container.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#bbb; font-size:14px;">請選擇分類或輸入關鍵字搜尋</div>';
     return;
   }
 
@@ -382,7 +394,7 @@ function render() {
   });
 
   if (sections.length === 0) {
-    container.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;">找不到符合的縮寫</div>';
+    container.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;">找不到符合的內容</div>';
     return;
   }
 
@@ -398,7 +410,7 @@ function render() {
               <div class="entry-header" onclick="toggle('${id}')">
                 <span class="abbr-tag">${hl(e.abbr, query)}</span>
                 <span class="full-preview">${hl(e.full, query)}</span>
-                <span style="font-size:10px; color:#ccc;">${isOpen?'▼':'▶'}</span>
+                <span class="chevron">▶</span>
               </div>
               <div class="entry-detail">
                 <div class="detail-label">英文全稱</div>
@@ -420,7 +432,6 @@ function toggle(id) {
 
 document.getElementById('search').addEventListener('input', function() {
   query = this.value;
-  // 搜尋時取消分類選取，以便搜尋全庫
   if (query) activecat = null; 
   openEntries.clear();
   document.getElementById('clear-btn').style.display = query ? 'flex' : 'none';
@@ -434,9 +445,7 @@ document.getElementById('clear-btn').addEventListener('click', function() {
   render();
 });
 
-// 初始化：只顯示分類按鈕
 render();
-
 </script>
 </body>
 </html>
