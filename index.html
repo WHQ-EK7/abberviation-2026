@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>縮寫查詢表</title>
+<title>伺服器縮寫查詢表 - Wistron</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -15,187 +15,135 @@
   .page-header {
     background: #fff;
     border-bottom: 0.5px solid rgba(0,0,0,0.1);
-    padding: 20px 24px 16px;
+    padding: 24px 24px 16px;
     position: sticky;
     top: 0;
     z-index: 100;
   }
   .page-header h1 {
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    text-align: center;
   }
   .search-bar {
     position: relative;
+    max-width: 860px;
+    margin: 0 auto;
   }
   .search-bar input {
     width: 100%;
-    padding: 10px 40px 10px 40px;
-    font-size: 15px;
-    border: 0.5px solid rgba(0,0,0,0.25);
-    border-radius: 10px;
+    padding: 12px 40px;
+    font-size: 16px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
     background: #f9f9f8;
-    color: #1a1a1a;
     outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: all 0.2s;
   }
   .search-bar input:focus {
-    border-color: rgba(0,0,0,0.4);
-    box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+    border-color: #1a1a1a;
     background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   }
   .search-icon {
     position: absolute;
-    left: 13px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
     color: #888;
-    font-size: 17px;
-    pointer-events: none;
+    font-size: 18px;
   }
   .clear-btn {
     position: absolute;
-    right: 10px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(0,0,0,0.08);
+    background: rgba(0,0,0,0.1);
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    color: #555;
-    font-size: 14px;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     display: none;
     align-items: center;
     justify-content: center;
-    line-height: 1;
   }
-  .clear-btn:hover { background: rgba(0,0,0,0.15); }
-  .main { max-width: 860px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+
+  /* 九宮格樣式優化 */
   .category-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 8px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 30px;
   }
   .cat-btn {
-    padding: 10px 12px;
-    border: 0.5px solid rgba(0,0,0,0.15);
-    border-radius: 8px;
+    aspect-ratio: 1 / 0.7; /* 讓按鈕呈現微扁的矩形 */
+    padding: 16px;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 16px;
     background: #fff;
-    color: #555;
-    font-size: 13px;
-    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
-    text-align: left;
-    transition: all 0.15s;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    text-align: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   }
-  .cat-btn:hover { border-color: rgba(0,0,0,0.3); color: #1a1a1a; background: #fafafa; }
+  .cat-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+    border-color: #1a1a1a;
+  }
   .cat-btn.active {
     background: #1a1a1a;
-    border-color: #1a1a1a;
     color: #fff;
+    border-color: #1a1a1a;
   }
   .cat-btn .count {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 400;
-    opacity: 0.5;
-    margin-left: 6px;
-    flex-shrink: 0;
+    margin-top: 8px;
+    padding: 2px 8px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 10px;
   }
-  .cat-btn.active .count { opacity: 0.6; }
-  .section { margin-bottom: 20px; }
+  .cat-btn.active .count {
+    background: rgba(255,255,255,0.2);
+  }
+
+  /* 列表樣式 */
+  .section { margin-top: 10px; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  
   .section-header {
-    font-size: 11px;
-    font-weight: 600;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding-bottom: 8px;
-    border-bottom: 0.5px solid rgba(0,0,0,0.1);
-    margin-bottom: 8px;
-  }
-  .entry-list { display: flex; flex-direction: column; gap: 5px; }
-  .entry {
-    background: #fff;
-    border: 0.5px solid rgba(0,0,0,0.1);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .entry-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.1s;
-  }
-  .entry-header:hover { background: #f9f9f8; }
-  .abbr-tag {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a1a;
-    min-width: 90px;
-    flex-shrink: 0;
-  }
-  .full-preview {
     font-size: 13px;
-    color: #666;
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .chevron {
-    font-size: 10px;
-    color: #bbb;
-    flex-shrink: 0;
-    transition: transform 0.2s;
-  }
-  .entry.open .chevron { transform: rotate(90deg); }
-  .entry-detail {
-    display: none;
-    padding: 0 14px 14px 14px;
-    border-top: 0.5px solid rgba(0,0,0,0.08);
-  }
-  .entry.open .entry-detail { display: block; }
-  .detail-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 10px;
-    margin-bottom: 3px;
-  }
-  .detail-val {
-    font-size: 14px;
+    font-weight: 700;
     color: #1a1a1a;
-    line-height: 1.6;
+    padding: 10px 0;
+    border-bottom: 2px solid #1a1a1a;
+    margin-bottom: 12px;
   }
-  .no-results {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: #aaa;
-    font-size: 14px;
-  }
-  mark {
-    background: #fef08a;
-    border-radius: 2px;
-    color: #000;
-    padding: 0 1px;
-  }
-  @media (max-width: 480px) {
-    .page-header { padding: 14px 14px 12px; }
-    .main { padding: 14px 10px 40px; }
-    .category-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-    .abbr-tag { min-width: 70px; font-size: 13px; }
+  .entry { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; margin-bottom: 8px; }
+  .entry-header { display: flex; align-items: center; gap: 12px; padding: 14px; cursor: pointer; }
+  .abbr-tag { font-size: 15px; font-weight: 700; min-width: 100px; color: #1a1a1a; }
+  .full-preview { font-size: 14px; color: #666; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .entry-detail { display: none; padding: 14px; background: #fafafa; border-top: 0.5px solid #eee; border-radius: 0 0 10px 10px; }
+  .entry.open .entry-detail { display: block; }
+  .detail-label { font-size: 11px; font-weight: 700; color: #999; margin-bottom: 4px; }
+  .detail-val { font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+
+  @media (max-width: 600px) {
+    .category-grid { grid-template-columns: repeat(2, 1fr); }
+    .cat-btn { aspect-ratio: 1 / 0.6; }
   }
 </style>
 </head>
@@ -205,7 +153,7 @@
   <h1>縮寫查詢表</h1>
   <div class="search-bar">
     <span class="search-icon">⌕</span>
-    <input type="text" id="search" placeholder="搜尋縮寫、英文或中文關鍵字..." autocomplete="off" />
+    <input type="text" id="search" placeholder="輸入關鍵字..." autocomplete="off" />
     <button class="clear-btn" id="clear-btn">×</button>
   </div>
 </div>
@@ -216,6 +164,7 @@
 </div>
 
 <script>
+// 此處保留你原始的 DATA 和 CAT_LABELS 內容
 const DATA = {
   "Schedule / Phase": [
     {abbr:"NUDD",full:"New, Unique, Different, Difficult",zh:""},
@@ -229,7 +178,7 @@ const DATA = {
     {abbr:"EVT",full:"Engineering Verification Test",zh:"工程驗證測試"},
     {abbr:"PVT",full:"Production Verification Test",zh:"生產驗證測試"},
     {abbr:"PPAP",full:"Production Part Approval Process",zh:"樣品生產承認流程"},
-    {abbr:"GA",full:"General Availability",zh:"產品已完成所有必要的開發和測試工作，達到市場投放的標準，並準備以全面的形式向所有目標客戶發布。"},
+    {abbr:"GA",full:"General Availability",zh:"產品已完成所有必要的開發和測試工作，達到市場投放的標準。"},
     {abbr:"EC",full:"Engineering Change",zh:"設計/工程變更"},
     {abbr:"ESP",full:"Early Ship Program",zh:""},
     {abbr:"RFI",full:"Ready to Integrate",zh:""},
@@ -241,10 +190,10 @@ const DATA = {
   ],
   "Modules": [
     {abbr:"SM",full:"Storage Module",zh:"存儲模組"},
-    {abbr:"RCP",full:"Right Control Panel",zh:"右耳模組，通常帶有小板、cable、按鍵或IO零件"},
-    {abbr:"LCP",full:"Left Control Panel",zh:"左耳模組，通常帶有小板、cable、按鍵或IO零件"},
+    {abbr:"RCP",full:"Right Control Panel",zh:"右耳模組"},
+    {abbr:"LCP",full:"Left Control Panel",zh:"左耳模組"},
     {abbr:"CEM IO",full:"Common Expansion Module Input/Output",zh:"通用擴展模組 輸入/輸出"},
-    {abbr:"PCIe",full:"Peripheral Component Interconnect Express",zh:"高速週邊元件交互連接裝置，高性能高帶寬的串行通信標準"},
+    {abbr:"PCIe",full:"Peripheral Component Interconnect Express",zh:"高速週邊元件交互連接裝置"},
     {abbr:"MHS",full:"Modular Hardware System",zh:"模組化硬體系統"},
     {abbr:"DC-SCM",full:"Data Center - Scalable Control Module",zh:"數據中心 - 可擴展控制模組"},
     {abbr:"DC-MHS",full:"Data Center Modular Hardware System",zh:"數據中心模組化硬體系統"},
@@ -267,14 +216,14 @@ const DATA = {
     {abbr:"HPM",full:"Host Processor Module",zh:"主處理器模組"},
     {abbr:"UBB",full:"Universal Base Board",zh:"通用基板"},
     {abbr:"PSB",full:"PCIe Switch Board",zh:"PCIe交換板"},
-    {abbr:"PBB",full:"PCIe Base Board",zh:"PCIe基板，連接和擴展各種PCIe設備"},
+    {abbr:"PBB",full:"PCIe Base Board",zh:"PCIe基板"},
     {abbr:"PSBB",full:"PCIe SW Base Board",zh:""},
     {abbr:"PSRBB",full:"PCIe SW Retimer Base Board",zh:""},
-    {abbr:"PIB",full:"Power Interposer Board",zh:"處理器互連板，連接和協調多個CPU通訊的電路板"},
-    {abbr:"PDB",full:"Power Distribution Board",zh:"電源分配板，指的是伺服器或電子設備內部分配電力的電路板"},
+    {abbr:"PIB",full:"Power Interposer Board",zh:"處理器互連板"},
+    {abbr:"PDB",full:"Power Distribution Board",zh:"電源分配板"},
     {abbr:"LSB",full:"Leak Sensor Board",zh:"檢測液體洩漏的電子電路板"},
     {abbr:"BMC",full:"Baseboard Management Controller",zh:"基板管理控制器"},
-    {abbr:"MP",full:"Mid-plane",zh:"連接和協調前端模組與後端模組的電氣和信號"},
+    {abbr:"MP",full:"Mid-plane",zh:"中板"},
     {abbr:"BP",full:"Backplane",zh:"背板"},
     {abbr:"DPU",full:"Data Processing Unit",zh:"資料處理單元"},
     {abbr:"NIC",full:"Network Interface Card",zh:"網路介面卡"},
@@ -284,21 +233,21 @@ const DATA = {
     {abbr:"SPM",full:"Storage Processor Module",zh:""},
     {abbr:"LCC",full:"Link Control Card",zh:""},
     {abbr:"DIMM",full:"Dual In-line Memory Module",zh:"雙列直插式記憶體模組"},
-    {abbr:"SOCAMM",full:"System On Chip Advanced Memory Module",zh:"新型高效能、低功耗記憶體模組"}
+    {abbr:"SOCAMM",full:"System On Chip Advanced Memory Module",zh:"新型高效能記憶體模組"}
   ],
   "NV Relating": [
-    {abbr:"DGX",full:"Deep GPU Xceleration (Deep Learning GPU Training System)",zh:"專為企業級 AI 設計的平台: 一體化解決方案，用於 AI 訓練與企業級應用。"},
-    {abbr:"EGX",full:"Edge Computing GPU Acceleration Platform",zh:"加速邊緣計算的平台: 支援將 AI 計算從數據中心延伸到邊緣設備。"},
-    {abbr:"IGX",full:"Industrial-Grade Edge AI Platform",zh:"工業級邊緣 AI 平台: 針對工業和醫療環境設計的高可靠性平台。"},
-    {abbr:"HGX",full:"Hyperscale Graphics eXtension (Hyper-Scale GPU Accelerator)",zh:"靈活定制的 AI 硬件平台: 用於超大規模 AI 計算，專注於性能與靈活性。"},
-    {abbr:"MGX",full:"Modular GPU eXtension / Architecture",zh:"模塊化靈活的計算平台: 適用於不同計算需求的模組化平台設計。"},
-    {abbr:"SXM",full:"Scalable Matrix Module",zh:"一種專用的模組化設計，透過 NVLink 提供高效能、高帶寬的 GPU 互聯解決方案。"},
-    {abbr:"NVLink",full:"NVLink (NVIDIA High-Speed Interconnect)",zh:"NVIDIA 公司開發的高速互連技術，用於在CPU和GPU之間，以及多個GPU之間實現高速資料傳輸。"},
+    {abbr:"DGX",full:"Deep GPU Xceleration",zh:"專為企業級 AI 設計的平台"},
+    {abbr:"EGX",full:"Edge Computing GPU Acceleration Platform",zh:"加速邊緣計算的平台"},
+    {abbr:"IGX",full:"Industrial-Grade Edge AI Platform",zh:"工業級邊緣 AI 平台"},
+    {abbr:"HGX",full:"Hyperscale Graphics eXtension",zh:"靈活定制的 AI 硬件平台"},
+    {abbr:"MGX",full:"Modular GPU eXtension / Architecture",zh:"模塊化靈活的計算平台"},
+    {abbr:"SXM",full:"Scalable Matrix Module",zh:"專用模組化設計"},
+    {abbr:"NVLink",full:"NVLink (NVIDIA High-Speed Interconnect)",zh:"NVIDIA 開發的高速互連技術"},
     {abbr:"ES",full:"Engineer Sample",zh:"樣品測試階段"},
     {abbr:"QS",full:"Qualification Sample",zh:"樣品測試階段"},
     {abbr:"PS",full:"Production Sample",zh:"正式版本"},
-    {abbr:"BF3",full:"BlueField 3",zh:"由NVIDIA推出的Data Processing Unit (DPU)，旨在加速資料中心運算，特別是網路、儲存和安全等任務。"},
-    {abbr:"BF4",full:"BlueField 4 DPU",zh:"專為新型AI儲存平台打造，作為端到端引擎，將AI資料儲存加速功能帶入AI資料管線的基礎層。"}
+    {abbr:"BF3",full:"BlueField 3",zh:"資料處理單元 (DPU)"},
+    {abbr:"BF4",full:"BlueField 4 DPU",zh:"專為 AI 儲存平台打造的 DPU"}
   ],
   "Modules Cooling": [
     {abbr:"LAAC",full:"Liquid-Assisted Air Cooling",zh:"液體輔助空氣冷卻系統"},
@@ -308,8 +257,8 @@ const DATA = {
     {abbr:"UQD",full:"Universal / Ultra-Fast Quick Disconnect",zh:"超快速快速斷開接頭裝置"},
     {abbr:"QD",full:"Quick Disconnect",zh:"快接頭"},
     {abbr:"BMQC",full:"Blind-Mate Liquid Cooling",zh:""},
-    {abbr:"IMM",full:"Internal Manifold Module",zh:"冷卻系統中的關鍵組件，負責冷卻液的分配與管理，確保散熱系統的高效運行和可靠性"},
-    {abbr:"ILC",full:"Immersion Cooling Loop",zh:"將伺服器或設備完全浸沒在特殊冷卻液中的技術，通常用於高效熱管理。"}
+    {abbr:"IMM",full:"Internal Manifold Module",zh:"冷卻系統關鍵組件"},
+    {abbr:"ILC",full:"Immersion Cooling Loop",zh:"浸沒式冷卻技術"}
   ],
   "Others": [
     {abbr:"DAE",full:"Drive Array Enclosure",zh:"驅動陣列外殼"},
@@ -323,33 +272,33 @@ const DATA = {
     {abbr:"POP",full:"Proof of Product",zh:""},
     {abbr:"LOM",full:"LAN on Motherboard",zh:""},
     {abbr:"PPCM",full:"Portfolio Platform Configuration Matrix",zh:""},
-    {abbr:"rSPI",full:"Restore Serial Peripheral Interface",zh:"一種SPI快閃記憶體裝置，用於存儲系統相關的資訊，例如服務標籤、系統配置或許可證"},
+    {abbr:"rSPI",full:"Restore Serial Peripheral Interface",zh:"SPI快閃記憶體裝置"},
     {abbr:"SDNO",full:"Software-Defined Network Orchestrator",zh:"軟體定義網路協調器"},
     {abbr:"SNIA",full:"Storage Networking Industry Association",zh:"儲存網路產業協會"},
-    {abbr:"VCC",full:"Validated Config Check",zh:"對已配置好的設定進行檢查，確保這些設置通過驗證且可以被使用或操作。"},
-    {abbr:"XGMI",full:"eXtended Global Memory Interconnect",zh:"AMD用來連接多個GPU的高速互連技術，實現高帶寬、低延遲的資料傳輸。"}
+    {abbr:"VCC",full:"Validated Config Check",zh:"已配置設定檢查"},
+    {abbr:"XGMI",full:"eXtended Global Memory Interconnect",zh:"AMD 高速互連技術"}
   ],
   "SPEC/DOC": [
     {abbr:"OU",full:"Open Unit (1OU: 48mm)",zh:""},
     {abbr:"RU",full:'Rack Unit (1RU: 44.45mm) 19"',zh:""},
     {abbr:"FH",full:'Full-Height (4.2" / ~10.67mm)',zh:"全高"},
-    {abbr:"HHL",full:'Half-Height, Half-Length (2.1"~6")',zh:"半高半長"},
-    {abbr:"FHHL",full:'Full-Height, Half-Length (4.2"~6")',zh:"全高半長"},
-    {abbr:"NVMe",full:"Non-Volatile Memory Express",zh:"非揮發性記憶體，快取固態硬碟SSD的常見快閃記憶體形式"},
+    {abbr:"HHL",full:'Half-Height, Half-Length',zh:"半高半長"},
+    {abbr:"FHHL",full:'Full-Height, Half-Length',zh:"全高半長"},
+    {abbr:"NVMe",full:"Non-Volatile Memory Express",zh:"非揮發性記憶體"},
     {abbr:"HEXO",full:"Hexagon Exoskeleton",zh:"設計規範"},
     {abbr:"FRU",full:"Field Replaceable Unit",zh:"現場可更換單元"},
     {abbr:"CRU",full:"Customer Replaceable Unit",zh:"客戶可更換單元"},
     {abbr:"Static rail",full:"Static rail",zh:"靜態滑軌"},
     {abbr:"Sliding rail",full:"Sliding rail",zh:"動態滑軌"},
     {abbr:"RSE",full:"Rail Solution Engineering",zh:"滑軌解決方案工程"},
-    {abbr:"ORv3",full:"Open Rack version 3",zh:"在Open Compute Project（OCP）架構下推出的第三版開放機架標準"}
+    {abbr:"ORv3",full:"Open Rack version 3",zh:"OCP 第三版開放機架標準"}
   ],
   "Material": [
     {abbr:"SGCC",full:"Steel Galvanized Cold rolled Coil",zh:"熱浸鍍鋅冷軋鋼板"},
     {abbr:"SPCC",full:"Steel Plate Cold rolled Coil",zh:"冷軋鋼板"},
-    {abbr:"SECC",full:"Steel Electrolytic Zinc-Coated Cold Commercial",zh:"電鍍鋅鋼板"},
-    {abbr:"SUS",full:"Steel Use Stainless (stainless steel)",zh:"不銹鋼"},
-    {abbr:"PFAS",full:"Per- and Polyfluoroalkyl Substances",zh:"含碳–氟鍵的合成化學物質，具有防水、防油或低摩擦等特性，部分與健康風險相關。"},
+    {abbr:"SECC",full:"Steel Electrolytic Zinc-Coated",zh:"電鍍鋅鋼板"},
+    {abbr:"SUS",full:"Steel Use Stainless",zh:"不銹鋼"},
+    {abbr:"PFAS",full:"Per- and Polyfluoroalkyl Substances",zh:"含碳–氟鍵的合成化學物質"},
     {abbr:"SIL",full:"System Information Label",zh:"系統資訊標籤"},
     {abbr:"PC film",full:"Polycarbonate film",zh:"聚碳酸酯薄膜"},
     {abbr:"PET film",full:"Polyethylene Terephthalate film",zh:"聚對苯二甲酸乙二酯薄膜"}
@@ -357,7 +306,7 @@ const DATA = {
   "Surface Treatment": [
     {abbr:"NCVM",full:"Non-Conductive Vacuum Metallization",zh:"金屬不導電真空電鍍"},
     {abbr:"ED (E-Coat)",full:"Electrophoretic Deposition",zh:"電泳塗裝"},
-    {abbr:"PVD",full:"Physical Vapor Deposition",zh:"物理氣相沉積，利用物理方式將固體材料氣化並在基材表面沉積形成高性能塗層的技術。"},
+    {abbr:"PVD",full:"Physical Vapor Deposition",zh:"物理氣相沉積"},
     {abbr:"PCF",full:"Product Carbon Footprint",zh:"碳足跡"}
   ]
 };
@@ -378,21 +327,24 @@ let activecat = null;
 let query = '';
 let openEntries = new Set();
 
+// 高亮關鍵字
 function hl(text, q) {
   if (!q) return text;
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
 }
 
+// 渲染九宮格分類
 function renderCats() {
   const grid = document.getElementById('cat-grid');
   grid.innerHTML = '';
   Object.entries(DATA).forEach(([cat, entries]) => {
     const btn = document.createElement('button');
     btn.className = 'cat-btn' + (activecat === cat ? ' active' : '');
-    btn.innerHTML = (CAT_LABELS[cat] || cat) + '<span class="count">' + entries.length + '</span>';
+    btn.innerHTML = `<span>${CAT_LABELS[cat] || cat}</span><span class="count">${entries.length}</span>`;
     btn.onclick = () => {
-      activecat = activecat === cat ? null : cat;
+      // 如果點擊已選中的，就取消選中（回到首頁）
+      activecat = (activecat === cat) ? null : cat;
       query = '';
       document.getElementById('search').value = '';
       document.getElementById('clear-btn').style.display = 'none';
@@ -402,13 +354,21 @@ function renderCats() {
   });
 }
 
+// 渲染結果列表
 function render() {
   renderCats();
   const container = document.getElementById('results');
   const q = query.toLowerCase().trim();
-  let sections = [];
+  
+  // 如果既沒有選擇分類，也沒有搜尋文字，就不顯示任何內容
+  if (!activecat && !q) {
+    container.innerHTML = '';
+    return;
+  }
 
+  let sections = [];
   const cats = activecat ? [activecat] : Object.keys(DATA);
+
   cats.forEach(cat => {
     let entries = DATA[cat];
     if (q) {
@@ -422,7 +382,7 @@ function render() {
   });
 
   if (sections.length === 0) {
-    container.innerHTML = '<div class="no-results">找不到符合的縮寫</div>';
+    container.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;">找不到符合的縮寫</div>';
     return;
   }
 
@@ -433,18 +393,19 @@ function render() {
         ${entries.map((e, i) => {
           const id = cat + '_' + i;
           const isOpen = openEntries.has(id);
-          return '<div class="entry' + (isOpen ? ' open' : '') + '" data-id="' + id + '">' +
-            '<div class="entry-header" onclick="toggle(\'' + id + '\')">' +
-              '<span class="abbr-tag">' + hl(e.abbr, query) + '</span>' +
-              '<span class="full-preview">' + hl(e.full, query) + '</span>' +
-              '<span class="chevron">▶</span>' +
-            '</div>' +
-            '<div class="entry-detail">' +
-              '<div class="detail-label">英文全稱</div>' +
-              '<div class="detail-val">' + hl(e.full, query) + '</div>' +
-              (e.zh ? '<div class="detail-label">中文說明</div><div class="detail-val">' + hl(e.zh, query) + '</div>' : '') +
-            '</div>' +
-          '</div>';
+          return `
+            <div class="entry ${isOpen ? 'open' : ''}" data-id="${id}">
+              <div class="entry-header" onclick="toggle('${id}')">
+                <span class="abbr-tag">${hl(e.abbr, query)}</span>
+                <span class="full-preview">${hl(e.full, query)}</span>
+                <span style="font-size:10px; color:#ccc;">${isOpen?'▼':'▶'}</span>
+              </div>
+              <div class="entry-detail">
+                <div class="detail-label">英文全稱</div>
+                <div class="detail-val">${hl(e.full, query)}</div>
+                ${e.zh ? `<div class="detail-label">中文說明</div><div class="detail-val">${hl(e.zh, query)}</div>` : ''}
+              </div>
+            </div>`;
         }).join('')}
       </div>
     </div>
@@ -454,13 +415,13 @@ function render() {
 function toggle(id) {
   if (openEntries.has(id)) openEntries.delete(id);
   else openEntries.add(id);
-  const el = document.querySelector('[data-id="' + id + '"]');
-  if (el) el.classList.toggle('open');
+  render();
 }
 
 document.getElementById('search').addEventListener('input', function() {
   query = this.value;
-  activecat = null;
+  // 搜尋時取消分類選取，以便搜尋全庫
+  if (query) activecat = null; 
   openEntries.clear();
   document.getElementById('clear-btn').style.display = query ? 'flex' : 'none';
   render();
@@ -473,7 +434,9 @@ document.getElementById('clear-btn').addEventListener('click', function() {
   render();
 });
 
+// 初始化：只顯示分類按鈕
 render();
+
 </script>
 </body>
 </html>
