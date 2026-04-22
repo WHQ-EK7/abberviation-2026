@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>伺服器縮寫查詢表 - Wistron</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -20,12 +21,32 @@
     top: 0;
     z-index: 100;
   }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
   .page-header h1 {
     font-size: 18px;
     font-weight: 700;
     color: #1a1a1a;
-    margin-bottom: 12px;
+    flex: 1;
   }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .action-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 12px; font-size: 12px; font-weight: 500;
+    border-radius: 8px; border: 1px solid rgba(0,0,0,0.15);
+    cursor: pointer; white-space: nowrap; transition: all 0.15s;
+    background: #fff; color: #444;
+  }
+  .action-btn:hover { background: #f5f5f3; border-color: rgba(0,0,0,0.3); color: #1a1a1a; }
+  .action-btn.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .action-btn.primary:hover { background: #333; }
+  #file-input { display: none; }
+
   .search-bar {
     position: relative;
     max-width: 860px;
@@ -45,109 +66,52 @@
     background: #fff;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   }
-  .search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #888;
-    font-size: 16px;
-  }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 16px; }
   .clear-btn {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(0,0,0,0.1);
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    width: 20px;
-    height: 20px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,0.1); border: none; border-radius: 50%;
+    cursor: pointer; width: 20px; height: 20px;
+    display: none; align-items: center; justify-content: center; font-size: 12px;
   }
 
   .main { max-width: 1000px; margin: 0 auto; padding: 16px; }
 
-  /* 調整為：網頁寬度內平均分配、居中、無滑軸 */
   .category-grid {
     display: grid;
-    /* 這裡使用 grid 讓 9 個欄位平均分配 */
-    grid-template-columns: repeat(9, 2fr); 
+    grid-template-columns: repeat(9, 2fr);
     gap: 8px;
     justify-content: center;
     width: 100%;
   }
-
   .cat-btn {
-    width: 100%;
-    padding: 10px 4px; /* 縮減左右內距以適應 9 欄 */
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 20px;
-    background: #fff;
-    color: #555;
-    font-size: 12px; /* 稍微縮小字體確保單行能放下 */
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column; /* 垂直排列文字與數字 */
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    text-align: center;
-    line-height: 1.2;
+    width: 100%; padding: 10px 4px;
+    border: 1px solid rgba(0,0,0,0.1); border-radius: 20px;
+    background: #fff; color: #555; font-size: 12px; font-weight: 500;
+    cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: all 0.2s; text-align: center; line-height: 1.2;
   }
-
-  .cat-btn:hover {
-    background: #fafafa;
-    border-color: rgba(0,0,0,0.3);
-  }
-
-  .cat-btn.active {
-    background: #1a1a1a;
-    color: #fff;
-    border-color: #1a1a1a;
-  }
-
+  .cat-btn:hover { background: #fafafa; border-color: rgba(0,0,0,0.3); }
+  .cat-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
   .cat-btn .count {
-    font-size: 10px;
-    margin-top: 4px;
-    opacity: 0.6;
-    background: rgba(0,0,0,0.05);
-    padding: 0px 6px;
-    border-radius: 8px;
+    font-size: 10px; margin-top: 4px; opacity: 0.6;
+    background: rgba(0,0,0,0.05); padding: 0px 6px; border-radius: 8px;
   }
-  
-  .cat-btn.active .count {
-    background: rgba(255,255,255,0.2);
-    opacity: 1;
-  }
+  .cat-btn.active .count { background: rgba(255,255,255,0.2); opacity: 1; }
 
-  /* 列表樣式 */
   .section { animation: fadeIn 0.3s ease; max-width: 860px; margin: 0 auto; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  
   .section-header {
-    font-size: 12px;
-    font-weight: 700;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    margin-bottom: 10px;
+    font-size: 12px; font-weight: 700; color: #888;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 10px;
   }
-  
   .entry { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; margin-bottom: 6px; }
   .entry-header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
   .abbr-tag { font-size: 14px; font-weight: 700; min-width: 85px; color: #1a1a1a; }
   .full-preview { font-size: 13px; color: #666; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .chevron { font-size: 10px; color: #ccc; transition: transform 0.2s; }
   .entry.open .chevron { transform: rotate(90deg); }
-  
   .entry-detail { display: none; padding: 12px 14px; background: #fafafa; border-top: 0.5px solid #eee; border-radius: 0 0 10px 10px; }
   .entry.open .entry-detail { display: block; }
   .detail-label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; margin-bottom: 4px; }
@@ -155,22 +119,131 @@
 
   mark { background: #fff176; color: #000; border-radius: 2px; }
 
-  /* 手機版適配：如果螢幕太窄，自動轉為三列顯示以免按鈕擠爛 */
+  /* ── Modal ── */
+  .modal-bg {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 14px;
+    padding: 24px 28px; width: 100%; max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    margin: 16px;
+  }
+  .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 18px; }
+  .form-row { margin-bottom: 14px; }
+  .form-row label { display: block; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; padding: 9px 12px; font-size: 14px;
+    border: 1px solid rgba(0,0,0,0.15); border-radius: 8px;
+    background: #f9f9f8; outline: none; transition: all 0.15s;
+    font-family: inherit;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    border-color: #1a1a1a; background: #fff;
+  }
+  .form-row textarea { resize: vertical; min-height: 70px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .modal-cancel { padding: 8px 16px; font-size: 13px; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; background: #fff; cursor: pointer; }
+  .modal-cancel:hover { background: #f5f5f3; }
+  .modal-submit { padding: 8px 18px; font-size: 13px; font-weight: 600; border: none; border-radius: 8px; background: #1a1a1a; color: #fff; cursor: pointer; }
+  .modal-submit:hover { background: #333; }
+
+  /* ── Drag overlay ── */
+  .drop-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(26,26,26,0.5); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .drop-overlay.active { display: flex; }
+  .drop-box {
+    background: #fff; border-radius: 16px;
+    border: 2px dashed #1a1a1a; padding: 40px 60px; text-align: center;
+  }
+  .drop-box p { font-size: 16px; font-weight: 600; margin-top: 10px; }
+  .drop-box span { font-size: 13px; color: #888; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px);
+    background: #1a1a1a; color: #fff; padding: 10px 18px; border-radius: 10px;
+    font-size: 13px; z-index: 999; opacity: 0; transition: all 0.3s; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #c0392b; }
+
   @media (max-width: 800px) {
-    .category-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    .category-grid { grid-template-columns: repeat(3, 1fr); }
+    .page-header { padding: 12px 16px 10px; }
+    .header-actions .action-btn span { display: none; }
   }
 </style>
 </head>
 <body>
 
 <div class="page-header">
-  <h1>縮寫查詢表</h1>
+  <div class="header-top">
+    <h1>縮寫查詢表</h1>
+    <div class="header-actions">
+      <button class="action-btn" onclick="openAddModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>新增縮寫</span>
+      </button>
+      <label class="action-btn primary" for="file-input">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span>上傳 Excel</span>
+      </label>
+      <input type="file" id="file-input" accept=".xlsx,.xls" />
+    </div>
+  </div>
   <div class="search-bar">
     <span class="search-icon">⌕</span>
     <input type="text" id="search" placeholder="搜尋縮寫、英文或中文..." autocomplete="off" />
     <button class="clear-btn" id="clear-btn">×</button>
+  </div>
+</div>
+
+<!-- Drag & Drop Overlay -->
+<div class="drop-overlay" id="drop-overlay">
+  <div class="drop-box">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <p>放開以更新查詢表</p>
+    <span>支援 .xlsx / .xls 格式</span>
+  </div>
+</div>
+
+<!-- 單筆新增 Modal -->
+<div class="modal-bg" id="add-modal">
+  <div class="modal">
+    <h2>新增縮寫</h2>
+    <div class="form-row">
+      <label>分類</label>
+      <select id="add-cat">
+        <option value="">── 選擇現有分類 ──</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>或新增分類名稱</label>
+      <input type="text" id="add-newcat" placeholder="留空則使用上方選擇的分類" />
+    </div>
+    <div class="form-row">
+      <label>縮寫 <span style="color:#e74c3c">*</span></label>
+      <input type="text" id="add-abbr" placeholder="例如：NPI" />
+    </div>
+    <div class="form-row">
+      <label>英文全稱 <span style="color:#e74c3c">*</span></label>
+      <input type="text" id="add-full" placeholder="例如：New Product Introduction" />
+    </div>
+    <div class="form-row">
+      <label>中文說明</label>
+      <textarea id="add-zh" placeholder="選填"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeAddModal()">取消</button>
+      <button class="modal-submit" onclick="submitAdd()">新增</button>
+    </div>
   </div>
 </div>
 
@@ -179,8 +252,11 @@
   <div id="results"></div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-const DATA = {
+// ── 資料 ──────────────────────────────────────────────────
+let DATA = {
   "Schedule / Phase": [
     {abbr:"NUDD",full:"New, Unique, Different, Difficult",zh:""},
     {abbr:"C0",full:"Concept",zh:"概念設計階段"},
@@ -222,7 +298,7 @@ const DATA = {
     {abbr:"OSFP",full:"Octal Small Form-factor Pluggable",zh:"可插拔式八通道小型模組"},
     {abbr:"QSFP",full:"Quad Small Form-factor Pluggable",zh:"四通道小型熱插拔可插拔模組"},
     {abbr:"PSU",full:"Power Supply Unit",zh:"電源供應器"},
-    {abbr:"M-CRPS",full:"Modular Hardware System Common Redundant Power Supply",zh:"模組化硬體系統 冗餘/備援電源供應器"},
+    {abbr:"M-CRPS",full:"Modular Hardware System Common Redundant Power Supply",zh:"模組化硬體系統 冗餘電源"},
     {abbr:"HSK",full:"Heatsink",zh:"散熱片 / 散熱器"},
     {abbr:"Zephyr",full:"A DIMM thermal solution",zh:""},
     {abbr:"DPC",full:"X DIMM per channel",zh:""}
@@ -338,12 +414,164 @@ const CAT_LABELS = {
   "Surface Treatment": "Surface Treatment"
 };
 
-let activecat = null;
-let query = '';
-let openEntries = new Set();
+let activecat = null, query = '', openEntries = new Set();
 
+// ── Toast ─────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+// ── Excel 解析 ────────────────────────────────────────────
+function parseWorkbook(wb) {
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const maxRow = range.e.r + 1;
+  const maxCol = range.e.c + 1;
+  const result = {};
+  const HEADER_ROW = 1; // 0-indexed = row 2
+
+  const catCols = [];
+  for (let c = 0; c < maxCol; c++) {
+    const cell = ws[XLSX.utils.encode_cell({r: HEADER_ROW, c})];
+    if (cell && cell.v && String(cell.v).trim()) {
+      catCols.push({col: c, name: String(cell.v).trim()});
+    }
+  }
+
+  catCols.forEach(({col, name}) => {
+    const fullCol = col + 1;
+    const entries = [];
+    for (let r = HEADER_ROW + 1; r < maxRow; r++) {
+      const abbrCell = ws[XLSX.utils.encode_cell({r, c: col})];
+      const fullCell = ws[XLSX.utils.encode_cell({r, c: fullCol})];
+      const abbr = abbrCell ? String(abbrCell.v).trim() : '';
+      const full = fullCell ? String(fullCell.v).trim() : '';
+      let zh = '';
+      if (r + 1 < maxRow) {
+        const na = ws[XLSX.utils.encode_cell({r: r+1, c: col})];
+        const nf = ws[XLSX.utils.encode_cell({r: r+1, c: fullCol})];
+        if ((!na || !String(na.v).trim()) && nf && String(nf.v).trim()) {
+          zh = String(nf.v).trim();
+        }
+      }
+      if (abbr) entries.push({abbr, full, zh});
+    }
+    if (entries.length) result[name] = entries;
+  });
+  return result;
+}
+
+function handleFile(file) {
+  if (!file || !file.name.match(/\.xlsx?$/i)) {
+    showToast('請上傳 .xlsx 或 .xls 檔案', true); return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+      const newData = parseWorkbook(wb);
+      const total = Object.values(newData).reduce((s, a) => s + a.length, 0);
+      if (total === 0) throw new Error('empty');
+      DATA = newData;
+      activecat = null; query = ''; openEntries.clear();
+      document.getElementById('search').value = '';
+      document.getElementById('clear-btn').style.display = 'none';
+      render();
+      showToast('✓ 已載入 ' + Object.keys(DATA).length + ' 個分類，共 ' + total + ' 筆縮寫');
+    } catch(err) {
+      showToast('解析失敗，請確認 Excel 格式', true);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('file-input').addEventListener('change', function() {
+  if (this.files[0]) handleFile(this.files[0]);
+  this.value = '';
+});
+
+// ── Drag & Drop ───────────────────────────────────────────
+let dragCounter = 0;
+document.addEventListener('dragenter', e => {
+  if (e.dataTransfer.types.includes('Files')) {
+    dragCounter++;
+    document.getElementById('drop-overlay').classList.add('active');
+  }
+});
+document.addEventListener('dragleave', () => {
+  if (--dragCounter <= 0) { dragCounter = 0; document.getElementById('drop-overlay').classList.remove('active'); }
+});
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault(); dragCounter = 0;
+  document.getElementById('drop-overlay').classList.remove('active');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+// ── 單筆新增 Modal ────────────────────────────────────────
+function openAddModal() {
+  const sel = document.getElementById('add-cat');
+  sel.innerHTML = '<option value="">── 選擇現有分類 ──</option>';
+  Object.keys(DATA).forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat; opt.textContent = cat;
+    sel.appendChild(opt);
+  });
+  // pre-select current active category
+  if (activecat) sel.value = activecat;
+  document.getElementById('add-abbr').value = '';
+  document.getElementById('add-full').value = '';
+  document.getElementById('add-zh').value = '';
+  document.getElementById('add-newcat').value = '';
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('add-abbr').focus(), 100);
+}
+
+function closeAddModal() {
+  document.getElementById('add-modal').classList.remove('open');
+}
+
+function submitAdd() {
+  const newCatVal = document.getElementById('add-newcat').value.trim();
+  const selCat = document.getElementById('add-cat').value;
+  const cat = newCatVal || selCat;
+  const abbr = document.getElementById('add-abbr').value.trim();
+  const full = document.getElementById('add-full').value.trim();
+  const zh = document.getElementById('add-zh').value.trim();
+
+  if (!cat) { showToast('請選擇或輸入分類', true); return; }
+  if (!abbr) { showToast('縮寫不能為空', true); return; }
+  if (!full) { showToast('英文全稱不能為空', true); return; }
+
+  if (!DATA[cat]) DATA[cat] = [];
+  // Check duplicate
+  const exists = DATA[cat].some(e => e.abbr.toLowerCase() === abbr.toLowerCase());
+  if (exists) { showToast('此分類已有相同縮寫', true); return; }
+
+  DATA[cat].push({abbr, full, zh});
+  closeAddModal();
+  activecat = cat;
+  query = '';
+  document.getElementById('search').value = '';
+  document.getElementById('clear-btn').style.display = 'none';
+  openEntries.clear();
+  render();
+  showToast('✓ 已新增「' + abbr + '」到 ' + cat);
+}
+
+// Close modal on background click
+document.getElementById('add-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
+
+// ── Render ────────────────────────────────────────────────
 function hl(text, q) {
-  if (!q) return text;
+  if (!q || !text) return text || '';
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
 }
@@ -354,8 +582,7 @@ function renderCats() {
   Object.entries(DATA).forEach(([cat, entries]) => {
     const btn = document.createElement('button');
     btn.className = 'cat-btn' + (activecat === cat ? ' active' : '');
-    // 數字改到下方小字
-    btn.innerHTML = `<span>${CAT_LABELS[cat] || cat}</span><span class="count">${entries.length}</span>`;
+    btn.innerHTML = '<span>' + (CAT_LABELS[cat] || cat) + '</span><span class="count">' + entries.length + '</span>';
     btn.onclick = () => {
       activecat = (activecat === cat) ? null : cat;
       query = '';
@@ -371,28 +598,25 @@ function render() {
   renderCats();
   const container = document.getElementById('results');
   const q = query.toLowerCase().trim();
-  
+
   if (!activecat && !q) {
     container.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#bbb; font-size:14px;">請選擇分類或輸入關鍵字搜尋</div>';
     return;
   }
 
-  let sections = [];
   const cats = activecat ? [activecat] : Object.keys(DATA);
-
+  const sections = [];
   cats.forEach(cat => {
     let entries = DATA[cat];
-    if (q) {
-      entries = entries.filter(e =>
-        e.abbr.toLowerCase().includes(q) ||
-        e.full.toLowerCase().includes(q) ||
-        e.zh.toLowerCase().includes(q)
-      );
-    }
-    if (entries.length > 0) sections.push({cat, entries});
+    if (q) entries = entries.filter(e =>
+      e.abbr.toLowerCase().includes(q) ||
+      (e.full && e.full.toLowerCase().includes(q)) ||
+      (e.zh && e.zh.toLowerCase().includes(q))
+    );
+    if (entries.length) sections.push({cat, entries});
   });
 
-  if (sections.length === 0) {
+  if (!sections.length) {
     container.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;">找不到符合的內容</div>';
     return;
   }
@@ -431,7 +655,7 @@ function toggle(id) {
 
 document.getElementById('search').addEventListener('input', function() {
   query = this.value;
-  if (query) activecat = null; 
+  if (query) activecat = null;
   openEntries.clear();
   document.getElementById('clear-btn').style.display = query ? 'flex' : 'none';
   render();
