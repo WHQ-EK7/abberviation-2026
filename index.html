@@ -3,247 +3,152 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>伺服器縮寫查詢表 - Wistron</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<title>Wistron 伺服器事業群 - 數位知識庫</title>
 <style>
+  /* --- 基礎設定 --- */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    background: #f5f5f3;
-    color: #1a1a1a;
-    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f7f9;
+    color: #333;
+    line-height: 1.5;
   }
+
+  /* --- 頂部導航與搜尋 --- */
   .page-header {
     background: #fff;
-    border-bottom: 0.5px solid rgba(0,0,0,0.1);
-    padding: 18px 36px 12px;
+    border-bottom: 1px solid #dee2e6;
+    padding: 16px;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   }
-  .header-top {
+  .table-tabs {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    gap: 8px;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
   }
-  .page-header h1 {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1a1a1a;
-    flex: 1;
+  .tab-btn {
+    padding: 8px 20px;
+    border: none;
+    background: #e9ecef;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    transition: all 0.2s;
   }
-  .header-actions { display: flex; gap: 8px; align-items: center; }
-  .action-btn {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 7px 12px; font-size: 12px; font-weight: 500;
-    border-radius: 8px; border: 1px solid rgba(0,0,0,0.15);
-    cursor: pointer; white-space: nowrap; transition: all 0.15s;
-    background: #fff; color: #444;
+  .tab-btn.active {
+    background: #0056b3;
+    color: #fff;
   }
-  .action-btn:hover { background: #f5f5f3; border-color: rgba(0,0,0,0.3); color: #1a1a1a; }
-  .action-btn.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-  .action-btn.primary:hover { background: #333; }
-  #file-input { display: none; }
-
   .search-bar {
     position: relative;
-    max-width: 860px;
+    max-width: 800px;
+    margin: 0 auto;
   }
   .search-bar input {
     width: 100%;
-    padding: 10px 40px;
+    padding: 12px 40px;
     font-size: 15px;
-    border: 1px solid rgba(0,0,0,0.15);
-    border-radius: 10px;
-    background: #f9f9f8;
+    border: 1px solid #ced4da;
+    border-radius: 12px;
+    background: #f8f9fa;
     outline: none;
-    transition: all 0.2s;
   }
-  .search-bar input:focus {
-    border-color: #1a1a1a;
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+  }
+
+  .main { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  /* --- L1-L12 製造層級專屬圖卡佈局 --- */
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .level-card {
     background: #fff;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    border-top: 6px solid #0056b3;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s;
   }
-  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 16px; }
-  .clear-btn {
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    background: rgba(0,0,0,0.1); border: none; border-radius: 50%;
-    cursor: pointer; width: 20px; height: 20px;
-    display: none; align-items: center; justify-content: center; font-size: 12px;
+  .level-badge {
+    background: #0056b3;
+    color: #fff;
+    padding: 10px 15px;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 1px;
   }
+  .level-content { padding: 15px; flex-grow: 1; }
+  .level-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #212529;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+  }
+  .level-desc { font-size: 13px; color: #6c757d; line-height: 1.6; }
 
-  .main { max-width: 1000px; margin: 0 auto; padding: 16px; }
-
+  /* --- 列表搜尋模式 --- */
   .category-grid {
     display: grid;
-    grid-template-columns: repeat(9, 2fr);
-    gap: 8px;
-    justify-content: center;
-    width: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
   }
   .cat-btn {
-    width: 100%; padding: 10px 4px;
-    border: 1px solid rgba(0,0,0,0.1); border-radius: 20px;
-    background: #fff; color: #555; font-size: 12px; font-weight: 500;
-    cursor: pointer; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    transition: all 0.2s; text-align: center; line-height: 1.2;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 15px;
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    transition: 0.2s;
   }
-  .cat-btn:hover { background: #fafafa; border-color: rgba(0,0,0,0.3); }
-  .cat-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-  .cat-btn .count {
-    font-size: 10px; margin-top: 4px; opacity: 0.6;
-    background: rgba(0,0,0,0.05); padding: 0px 6px; border-radius: 8px;
-  }
-  .cat-btn.active .count { background: rgba(255,255,255,0.2); opacity: 1; }
-
-  .section { animation: fadeIn 0.3s ease; max-width: 860px; margin: 0 auto; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .section-header {
-    font-size: 12px; font-weight: 700; color: #888;
-    text-transform: uppercase; letter-spacing: 0.05em;
-    padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); margin-bottom: 10px;
-  }
-  .entry { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; margin-bottom: 6px; }
-  .entry-header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
-  .abbr-tag { font-size: 14px; font-weight: 700; min-width: 85px; color: #1a1a1a; }
-  .full-preview { font-size: 13px; color: #666; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .chevron { font-size: 10px; color: #ccc; transition: transform 0.2s; }
-  .entry.open .chevron { transform: rotate(90deg); }
-  .entry-detail { display: none; padding: 12px 14px; background: #fafafa; border-top: 0.5px solid #eee; border-radius: 0 0 10px 10px; }
+  .cat-btn.active { background: #343a40; color: #fff; border-color: #343a40; }
+  
+  .entry { background: #fff; border: 1px solid #e9ecef; border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+  .entry-header { display: flex; padding: 15px; cursor: pointer; align-items: center; }
+  .abbr-tag { font-weight: 700; min-width: 100px; color: #0056b3; font-size: 15px; }
+  .full-preview { color: #6c757d; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .entry-detail { display: none; padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; }
   .entry.open .entry-detail { display: block; }
-  .detail-label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; margin-bottom: 4px; }
-  .detail-val { font-size: 14px; line-height: 1.5; margin-bottom: 10px; color: #333; }
-
-  mark { background: #fff176; color: #000; border-radius: 2px; }
-
-  /* ── Modal ── */
-  .modal-bg {
-    display: none; position: fixed; inset: 0; z-index: 300;
-    background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-    align-items: center; justify-content: center;
-  }
-  .modal-bg.open { display: flex; }
-  .modal {
-    background: #fff; border-radius: 14px;
-    padding: 24px 28px; width: 100%; max-width: 420px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-    margin: 16px;
-  }
-  .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 18px; }
-  .form-row { margin-bottom: 14px; }
-  .form-row label { display: block; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
-  .form-row input, .form-row select, .form-row textarea {
-    width: 100%; padding: 9px 12px; font-size: 14px;
-    border: 1px solid rgba(0,0,0,0.15); border-radius: 8px;
-    background: #f9f9f8; outline: none; transition: all 0.15s;
-    font-family: inherit;
-  }
-  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
-    border-color: #1a1a1a; background: #fff;
-  }
-  .form-row textarea { resize: vertical; min-height: 70px; }
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
-  .modal-cancel { padding: 8px 16px; font-size: 13px; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; background: #fff; cursor: pointer; }
-  .modal-cancel:hover { background: #f5f5f3; }
-  .modal-submit { padding: 8px 18px; font-size: 13px; font-weight: 600; border: none; border-radius: 8px; background: #1a1a1a; color: #fff; cursor: pointer; }
-  .modal-submit:hover { background: #333; }
-
-  /* ── Drag overlay ── */
-  .drop-overlay {
-    display: none; position: fixed; inset: 0; z-index: 200;
-    background: rgba(26,26,26,0.5); backdrop-filter: blur(4px);
-    align-items: center; justify-content: center;
-  }
-  .drop-overlay.active { display: flex; }
-  .drop-box {
-    background: #fff; border-radius: 16px;
-    border: 2px dashed #1a1a1a; padding: 40px 60px; text-align: center;
-  }
-  .drop-box p { font-size: 16px; font-weight: 600; margin-top: 10px; }
-  .drop-box span { font-size: 13px; color: #888; }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px);
-    background: #1a1a1a; color: #fff; padding: 10px 18px; border-radius: 10px;
-    font-size: 13px; z-index: 999; opacity: 0; transition: all 0.3s; white-space: nowrap;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .toast.error { background: #c0392b; }
-
-  @media (max-width: 800px) {
+  
+  @media (max-width: 600px) {
     .category-grid { grid-template-columns: repeat(3, 1fr); }
-    .page-header { padding: 12px 16px 10px; }
-    .header-actions .action-btn span { display: none; }
+    .level-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
 <div class="page-header">
-  <div class="header-top">
-    <h1>縮寫查詢表</h1>
-    <div class="header-actions">
-      <button class="action-btn" onclick="openAddModal()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>新增縮寫</span>
-      </button>
-      <label class="action-btn primary" for="file-input">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <span>上傳 Excel</span>
-      </label>
-      <input type="file" id="file-input" accept=".xlsx,.xls" />
-    </div>
+  <div class="table-tabs">
+    <button class="tab-btn active" id="tab-data" onclick="switchTable('Data')">縮寫查詢</button>
+    <button class="tab-btn" id="tab-mfg" onclick="switchTable('Manufacturing')">L1-L12 製造層級</button>
+    <button class="tab-btn" id="tab-mat" onclick="switchTable('Materials')">材質資料庫</button>
   </div>
   <div class="search-bar">
     <span class="search-icon">⌕</span>
-    <input type="text" id="search" placeholder="搜尋縮寫、英文或中文..." autocomplete="off" />
-    <button class="clear-btn" id="clear-btn">×</button>
-  </div>
-</div>
-
-<!-- Drag & Drop Overlay -->
-<div class="drop-overlay" id="drop-overlay">
-  <div class="drop-box">
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    <p>放開以更新查詢表</p>
-    <span>支援 .xlsx / .xls 格式</span>
-  </div>
-</div>
-
-<!-- 單筆新增 Modal -->
-<div class="modal-bg" id="add-modal">
-  <div class="modal">
-    <h2>新增縮寫</h2>
-    <div class="form-row">
-      <label>分類</label>
-      <select id="add-cat">
-        <option value="">── 選擇現有分類 ──</option>
-      </select>
-    </div>
-    <div class="form-row">
-      <label>或新增分類名稱</label>
-      <input type="text" id="add-newcat" placeholder="留空則使用上方選擇的分類" />
-    </div>
-    <div class="form-row">
-      <label>縮寫 <span style="color:#e74c3c">*</span></label>
-      <input type="text" id="add-abbr" placeholder="例如：NPI" />
-    </div>
-    <div class="form-row">
-      <label>英文全稱 <span style="color:#e74c3c">*</span></label>
-      <input type="text" id="add-full" placeholder="例如：New Product Introduction" />
-    </div>
-    <div class="form-row">
-      <label>中文說明</label>
-      <textarea id="add-zh" placeholder="選填"></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="modal-cancel" onclick="closeAddModal()">取消</button>
-      <button class="modal-submit" onclick="submitAdd()">新增</button>
-    </div>
+    <input type="text" id="search" placeholder="搜尋縮寫、關鍵字..." autocomplete="off" />
   </div>
 </div>
 
@@ -252,423 +157,160 @@
   <div id="results"></div>
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script>
-// ── 資料 ──────────────────────────────────────────────────
-let DATA = {
-  "Schedule / Phase": [
-    {abbr:"NUDD",full:"New, Unique, Different, Difficult",zh:""},
-    {abbr:"C0",full:"Concept",zh:"概念設計階段"},
-    {abbr:"BU",full:"Bring Up (C0, C1, BU)",zh:""},
-    {abbr:"CT",full:"Component Testing",zh:""},
-    {abbr:"NT",full:"Node Test",zh:""},
-    {abbr:"OT",full:"Offer Test",zh:""},
-    {abbr:"reg",full:"Regression (EX: CT-reg)",zh:""},
-    {abbr:"BA",full:"Business Award",zh:"確認開案得到生意 - 賀成交"},
-    {abbr:"EVT",full:"Engineering Verification Test",zh:"工程驗證測試"},
-    {abbr:"PVT",full:"Production Verification Test",zh:"生產驗證測試"},
-    {abbr:"PPAP",full:"Production Part Approval Process",zh:"樣品生產承認流程"},
-    {abbr:"GA",full:"General Availability",zh:"產品已完成開發，達到市場投放標準。"},
-    {abbr:"EC",full:"Engineering Change",zh:"設計/工程變更"},
-    {abbr:"ESP",full:"Early Ship Program",zh:""},
-    {abbr:"RFI",full:"Ready to Integrate",zh:""},
-    {abbr:"RFD",full:"Release from Development",zh:""},
-    {abbr:"NPI",full:"New Product Introduction",zh:"新產品試產導入服務"},
-    {abbr:"RTS",full:"Ready to Ship/Sale",zh:"出貨"},
-    {abbr:"EOL",full:"End of Life",zh:"停產 - 壽終正寢"},
-    {abbr:"MOR",full:"Monthly Operation Review",zh:"每月營運審查"}
-  ],
-  "Modules": [
-    {abbr:"SM",full:"Storage Module",zh:"存儲模組"},
-    {abbr:"RCP",full:"Right Control Panel",zh:"右耳模組"},
-    {abbr:"LCP",full:"Left Control Panel",zh:"左耳模組"},
-    {abbr:"CEM IO",full:"Common Expansion Module Input/Output",zh:"通用擴展模組 輸入/輸出"},
-    {abbr:"PCIe",full:"Peripheral Component Interconnect Express",zh:"高速週邊元件交互連接裝置"},
-    {abbr:"MHS",full:"Modular Hardware System",zh:"模組化硬體系統"},
-    {abbr:"DC-SCM",full:"Data Center - Scalable Control Module",zh:"數據中心 - 可擴展控制模組"},
-    {abbr:"DC-MHS",full:"Data Center Modular Hardware System",zh:"數據中心模組化硬體系統"},
-    {abbr:"BOSS",full:"Boot Optimized Storage Solution",zh:"支援兩個 M.2 固態硬碟"},
-    {abbr:"EDSFF",full:"Enterprise and Datacenter SSD Form Factor",zh:"企業及資料中心 SSD 形態規格"},
-    {abbr:"OCP",full:"Open Compute Project",zh:"開放計算項目"},
-    {abbr:"OAI",full:"OCP Accelerator Infrastructure",zh:"開放加速器基礎設施"},
-    {abbr:"OAM",full:"Open Accelerator Module",zh:"開放加速器模組"},
-    {abbr:"GPU",full:"Graphics Processing Unit",zh:"圖形處理器"},
-    {abbr:"CPU",full:"Central Processing Unit",zh:"中央處理器"},
-    {abbr:"OSFP",full:"Octal Small Form-factor Pluggable",zh:"可插拔式八通道小型模組"},
-    {abbr:"QSFP",full:"Quad Small Form-factor Pluggable",zh:"四通道小型熱插拔可插拔模組"},
-    {abbr:"PSU",full:"Power Supply Unit",zh:"電源供應器"},
-    {abbr:"M-CRPS",full:"Modular Hardware System Common Redundant Power Supply",zh:"模組化硬體系統 冗餘電源"},
-    {abbr:"HSK",full:"Heatsink",zh:"散熱片 / 散熱器"},
-    {abbr:"Zephyr",full:"A DIMM thermal solution",zh:""},
-    {abbr:"DPC",full:"X DIMM per channel",zh:""}
-  ],
-  "Board and Component": [
-    {abbr:"HPM",full:"Host Processor Module",zh:"主處理器模組"},
-    {abbr:"UBB",full:"Universal Base Board",zh:"通用基板"},
-    {abbr:"PSB",full:"PCIe Switch Board",zh:"PCIe交換板"},
-    {abbr:"PBB",full:"PCIe Base Board",zh:"PCIe基板"},
-    {abbr:"PSBB",full:"PCIe SW Base Board",zh:""},
-    {abbr:"PSRBB",full:"PCIe SW Retimer Base Board",zh:""},
-    {abbr:"PIB",full:"Power Interposer Board",zh:"處理器互連板"},
-    {abbr:"PDB",full:"Power Distribution Board",zh:"電源分配板"},
-    {abbr:"LSB",full:"Leak Sensor Board",zh:"檢測液體洩漏的電子電路板"},
-    {abbr:"BMC",full:"Baseboard Management Controller",zh:"基板管理控制器"},
-    {abbr:"MP",full:"Mid-plane",zh:"中板"},
-    {abbr:"BP",full:"Backplane",zh:"背板"},
-    {abbr:"DPU",full:"Data Processing Unit",zh:"資料處理單元"},
-    {abbr:"NIC",full:"Network Interface Card",zh:"網路介面卡"},
-    {abbr:"Smart NIC",full:"Smart NIC",zh:"智慧網卡"},
-    {abbr:"FLOP",full:"Floating OCP paddle card",zh:""},
-    {abbr:"ICB",full:"Interconnect Board",zh:""},
-    {abbr:"SPM",full:"Storage Processor Module",zh:""},
-    {abbr:"LCC",full:"Link Control Card",zh:""},
-    {abbr:"DIMM",full:"Dual In-line Memory Module",zh:"雙列直插式記憶體模組"},
-    {abbr:"SOCAMM",full:"System On Chip Advanced Memory Module",zh:"新型高效能記憶體模組"}
-  ],
-  "NV Relating": [
-    {abbr:"DGX",full:"Deep GPU Xceleration",zh:"專為企業級 AI 設計的平台"},
-    {abbr:"EGX",full:"Edge Computing GPU Acceleration Platform",zh:"加速邊緣計算的平台"},
-    {abbr:"IGX",full:"Industrial-Grade Edge AI Platform",zh:"工業級邊緣 AI 平台"},
-    {abbr:"HGX",full:"Hyperscale Graphics eXtension",zh:"靈活定制的 AI 硬件平台"},
-    {abbr:"MGX",full:"Modular GPU eXtension / Architecture",zh:"模塊化靈活的計算平台"},
-    {abbr:"SXM",full:"Scalable Matrix Module",zh:"專用模組化設計"},
-    {abbr:"NVLink",full:"NVLink (NVIDIA High-Speed Interconnect)",zh:"NVIDIA 開發的高速互連技術"},
-    {abbr:"ES",full:"Engineer Sample",zh:"樣品測試階段"},
-    {abbr:"QS",full:"Qualification Sample",zh:"樣品測試階段"},
-    {abbr:"PS",full:"Production Sample",zh:"正式版本"},
-    {abbr:"BF3",full:"BlueField 3",zh:"資料處理單元 (DPU)"},
-    {abbr:"BF4",full:"BlueField 4 DPU",zh:"專為 AI 儲存平台打造的 DPU"}
-  ],
-  "Modules Cooling": [
-    {abbr:"LAAC",full:"Liquid-Assisted Air Cooling",zh:"液體輔助空氣冷卻系統"},
-    {abbr:"DLC",full:"Direct Liquid Cooling",zh:"直接液體冷卻系統"},
-    {abbr:"AC",full:"Air Cooling",zh:"空氣冷卻系統"},
-    {abbr:"CDM",full:"Coolant Distribution Manifold",zh:"冷卻液分配歧管"},
-    {abbr:"UQD",full:"Universal / Ultra-Fast Quick Disconnect",zh:"超快速快速斷開接頭裝置"},
-    {abbr:"QD",full:"Quick Disconnect",zh:"快接頭"},
-    {abbr:"BMQC",full:"Blind-Mate Liquid Cooling",zh:""},
-    {abbr:"IMM",full:"Internal Manifold Module",zh:"冷卻系統關鍵組件"},
-    {abbr:"ILC",full:"Immersion Cooling Loop",zh:"浸沒式冷卻技術"}
-  ],
-  "Others": [
-    {abbr:"DAE",full:"Drive Array Enclosure",zh:"驅動陣列外殼"},
-    {abbr:"CBM",full:"New OCP 3.0 card (CBM)",zh:""},
-    {abbr:"SEL",full:"System Event Log",zh:""},
-    {abbr:"BIOS",full:"Basic Input/Output System",zh:""},
-    {abbr:"AVAP",full:"Approved Vendor Approved Price",zh:""},
-    {abbr:"AVL",full:"Approved Vendor List",zh:""},
-    {abbr:"POC",full:"Proof of Concept",zh:""},
-    {abbr:"POR",full:"Plan of Record",zh:""},
-    {abbr:"POP",full:"Proof of Product",zh:""},
-    {abbr:"LOM",full:"LAN on Motherboard",zh:""},
-    {abbr:"PPCM",full:"Portfolio Platform Configuration Matrix",zh:""},
-    {abbr:"rSPI",full:"Restore Serial Peripheral Interface",zh:"SPI快閃記憶體裝置"},
-    {abbr:"SDNO",full:"Software-Defined Network Orchestrator",zh:"軟體定義網路協調器"},
-    {abbr:"SNIA",full:"Storage Networking Industry Association",zh:"儲存網路產業協會"},
-    {abbr:"VCC",full:"Validated Config Check",zh:"已配置設定檢查"},
-    {abbr:"XGMI",full:"eXtended Global Memory Interconnect",zh:"AMD 高速互連技術"}
-  ],
-  "SPEC/DOC": [
-    {abbr:"OU",full:"Open Unit (1OU: 48mm)",zh:""},
-    {abbr:"RU",full:'Rack Unit (1RU: 44.45mm) 19"',zh:""},
-    {abbr:"FH",full:'Full-Height (4.2" / ~10.67mm)',zh:"全高"},
-    {abbr:"HHL",full:'Half-Height, Half-Length',zh:"半高半長"},
-    {abbr:"FHHL",full:'Full-Height, Half-Length',zh:"全高半長"},
-    {abbr:"NVMe",full:"Non-Volatile Memory Express",zh:"非揮發性記憶體"},
-    {abbr:"HEXO",full:"Hexagon Exoskeleton",zh:"設計規範"},
-    {abbr:"FRU",full:"Field Replaceable Unit",zh:"現場可更換單元"},
-    {abbr:"CRU",full:"Customer Replaceable Unit",zh:"客戶可更換單元"},
-    {abbr:"Static rail",full:"Static rail",zh:"靜態滑軌"},
-    {abbr:"Sliding rail",full:"Sliding rail",zh:"動態滑軌"},
-    {abbr:"RSE",full:"Rail Solution Engineering",zh:"滑軌解決方案工程"},
-    {abbr:"ORv3",full:"Open Rack version 3",zh:"OCP 第三版開放機架標準"}
-  ],
-  "Material": [
-    {abbr:"SGCC",full:"Steel Galvanized Cold rolled Coil",zh:"熱浸鍍鋅冷軋鋼板"},
-    {abbr:"SPCC",full:"Steel Plate Cold rolled Coil",zh:"冷軋鋼板"},
-    {abbr:"SECC",full:"Steel Electrolytic Zinc-Coated",zh:"電鍍鋅鋼板"},
-    {abbr:"SUS",full:"Steel Use Stainless",zh:"不銹鋼"},
-    {abbr:"PFAS",full:"Per- and Polyfluoroalkyl Substances",zh:"含碳–氟鍵的合成化學物質"},
-    {abbr:"SIL",full:"System Information Label",zh:"系統資訊標籤"},
-    {abbr:"PC film",full:"Polycarbonate film",zh:"聚碳酸酯薄膜"},
-    {abbr:"PET film",full:"Polyethylene Terephthalate film",zh:"聚對苯二甲酸乙二酯薄膜"}
-  ],
-  "Surface Treatment": [
-    {abbr:"NCVM",full:"Non-Conductive Vacuum Metallization",zh:"金屬不導電真空電鍍"},
-    {abbr:"ED (E-Coat)",full:"Electrophoretic Deposition",zh:"電泳塗裝"},
-    {abbr:"PVD",full:"Physical Vapor Deposition",zh:"物理氣相沉積"},
-    {abbr:"PCF",full:"Product Carbon Footprint",zh:"碳足跡"}
-  ]
-};
-
-const CAT_LABELS = {
-  "Schedule / Phase": "Schedule / Phase",
-  "Modules": "Modules",
-  "Board and Component": "Board & Component",
-  "NV Relating": "NV Relating",
-  "Modules Cooling": "Cooling Modules",
-  "Others": "Others",
-  "SPEC/DOC": "SPEC / DOC",
-  "Material": "Material",
-  "Surface Treatment": "Surface Treatment"
-};
-
-let activecat = null, query = '', openEntries = new Set();
-
-// ── Toast ─────────────────────────────────────────────────
-let toastTimer;
-function showToast(msg, isError) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show' + (isError ? ' error' : '');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);
-}
-
-// ── Excel 解析 ────────────────────────────────────────────
-function parseWorkbook(wb) {
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  const maxRow = range.e.r + 1;
-  const maxCol = range.e.c + 1;
-  const result = {};
-  const HEADER_ROW = 1; // 0-indexed = row 2
-
-  const catCols = [];
-  for (let c = 0; c < maxCol; c++) {
-    const cell = ws[XLSX.utils.encode_cell({r: HEADER_ROW, c})];
-    if (cell && cell.v && String(cell.v).trim()) {
-      catCols.push({col: c, name: String(cell.v).trim()});
-    }
-  }
-
-  catCols.forEach(({col, name}) => {
-    const fullCol = col + 1;
-    const entries = [];
-    for (let r = HEADER_ROW + 1; r < maxRow; r++) {
-      const abbrCell = ws[XLSX.utils.encode_cell({r, c: col})];
-      const fullCell = ws[XLSX.utils.encode_cell({r, c: fullCol})];
-      const abbr = abbrCell ? String(abbrCell.v).trim() : '';
-      const full = fullCell ? String(fullCell.v).trim() : '';
-      let zh = '';
-      if (r + 1 < maxRow) {
-        const na = ws[XLSX.utils.encode_cell({r: r+1, c: col})];
-        const nf = ws[XLSX.utils.encode_cell({r: r+1, c: fullCol})];
-        if ((!na || !String(na.v).trim()) && nf && String(nf.v).trim()) {
-          zh = String(nf.v).trim();
-        }
-      }
-      if (abbr) entries.push({abbr, full, zh});
-    }
-    if (entries.length) result[name] = entries;
-  });
-  return result;
-}
-
-function handleFile(file) {
-  if (!file || !file.name.match(/\.xlsx?$/i)) {
-    showToast('請上傳 .xlsx 或 .xls 檔案', true); return;
-  }
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-      const newData = parseWorkbook(wb);
-      const total = Object.values(newData).reduce((s, a) => s + a.length, 0);
-      if (total === 0) throw new Error('empty');
-      DATA = newData;
-      activecat = null; query = ''; openEntries.clear();
-      document.getElementById('search').value = '';
-      document.getElementById('clear-btn').style.display = 'none';
-      render();
-      showToast('✓ 已載入 ' + Object.keys(DATA).length + ' 個分類，共 ' + total + ' 筆縮寫');
-    } catch(err) {
-      showToast('解析失敗，請確認 Excel 格式', true);
+  // --- 內建資料庫 (不連結外部檔案) ---
+  const DATABASE = {
+    "Data": {
+      "Schedule / Phase": [
+        { key: "NUDD", title: "New, Unique, Different, Difficult", desc: "" },
+        { key: "C0", title: "Concept", desc: "概念設計階段" },
+        { key: "EVT", title: "Engineering Verification Test", desc: "工程驗證測試" },
+        { key: "PVT", title: "Production Verification Test", desc: "生產驗證測試" },
+        { key: "GA", title: "General Availability", desc: "產品正式發佈上線" }
+      ],
+      "Modules": [
+        { key: "SM", title: "Storage Module", desc: "存儲模組" },
+        { key: "GPU", title: "Graphics Processing Unit", desc: "圖形處理器" },
+        { key: "PSU", title: "Power Supply Unit", desc: "電源供應器" }
+      ],
+      "NV Relating": [
+        { key: "DGX", title: "Deep GPU Xceleration", desc: "NVIDIA AI 訓練系統平台" },
+        { key: "NVLink", title: "NVIDIA High-Speed Interconnect", desc: "NVIDIA 高速互連技術" }
+      ]
+    },
+    "Manufacturing": [
+      { key: "Level 1", title: "Parts manufacturing", desc: "Parts manufacturing - this includes non-painted parts and molding parts on the component level." },
+      { key: "Level 2", title: "Piece Parts Sub Assembly", desc: "Piece Parts Sub Assembly - some level of assembly." },
+      { key: "Level 3", title: "Case Assembly", desc: "Metals and plastics are integrated together and shipped as a case (i.e. chassis)." },
+      { key: "Level 4", title: "Kit Assembly", desc: "Metals and Plastics + PSU and/or Flat Cable and/or Backplane are shipped as a kit or bag." },
+      { key: "Level 5", title: "Enclosure parts", desc: "All enclosure parts from Level 4 attached, cables integrated, I/O tested." },
+      { key: "Level 6", title: "Motherboard Integration", desc: "Integration of motherboard into chassis enclosure and power on test." },
+      { key: "Level 7", title: "Add-on Cards", desc: "Integration of add-on cards into server barebone with ability to test." },
+      { key: "Level 8", title: "Hard Drives", desc: "Integration of hard drives into server barebone with ability to test." },
+      { key: "Level 9", title: "CPU & Memory", desc: "Integration of CPU and memory into server barebone with ability to test." },
+      { key: "Level 10", title: "Full System", desc: "Full assembly of server with full system and component level testing, OS/software integration." },
+      { key: "Level 11", title: "Rack Integration", desc: "Node-level assembly, testing, OS/software loading followed by rack cabinet assembly." },
+      { key: "Level 12", title: "Multi-Rack Level", desc: "Rack to multi-rack level manufacturing including all networking with full validation." }
+    ],
+    "Materials": {
+      "Metals": [
+        { key: "SGCC", title: "Steel Galvanized Cold rolled Coil", desc: "熱浸鍍鋅冷軋鋼板" },
+        { key: "SUS", title: "Steel Use Stainless", desc: "不銹鋼" }
+      ],
+      "Surfaces": [
+        { key: "NCVM", title: "Non-Conductive Vacuum Metallization", desc: "金屬不導電真空電鍍" },
+        { key: "PVD", title: "Physical Vapor Deposition", desc: "物理氣相沉積" }
+      ]
     }
   };
-  reader.readAsArrayBuffer(file);
-}
 
-document.getElementById('file-input').addEventListener('change', function() {
-  if (this.files[0]) handleFile(this.files[0]);
-  this.value = '';
-});
+  let currentTab = 'Data';
+  let activeCat = null;
+  let query = '';
+  let openEntries = new Set();
 
-// ── Drag & Drop ───────────────────────────────────────────
-let dragCounter = 0;
-document.addEventListener('dragenter', e => {
-  if (e.dataTransfer.types.includes('Files')) {
-    dragCounter++;
-    document.getElementById('drop-overlay').classList.add('active');
-  }
-});
-document.addEventListener('dragleave', () => {
-  if (--dragCounter <= 0) { dragCounter = 0; document.getElementById('drop-overlay').classList.remove('active'); }
-});
-document.addEventListener('dragover', e => e.preventDefault());
-document.addEventListener('drop', e => {
-  e.preventDefault(); dragCounter = 0;
-  document.getElementById('drop-overlay').classList.remove('active');
-  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-});
-
-// ── 單筆新增 Modal ────────────────────────────────────────
-function openAddModal() {
-  const sel = document.getElementById('add-cat');
-  sel.innerHTML = '<option value="">── 選擇現有分類 ──</option>';
-  Object.keys(DATA).forEach(cat => {
-    const opt = document.createElement('option');
-    opt.value = cat; opt.textContent = cat;
-    sel.appendChild(opt);
-  });
-  // pre-select current active category
-  if (activecat) sel.value = activecat;
-  document.getElementById('add-abbr').value = '';
-  document.getElementById('add-full').value = '';
-  document.getElementById('add-zh').value = '';
-  document.getElementById('add-newcat').value = '';
-  document.getElementById('add-modal').classList.add('open');
-  setTimeout(() => document.getElementById('add-abbr').focus(), 100);
-}
-
-function closeAddModal() {
-  document.getElementById('add-modal').classList.remove('open');
-}
-
-function submitAdd() {
-  const newCatVal = document.getElementById('add-newcat').value.trim();
-  const selCat = document.getElementById('add-cat').value;
-  const cat = newCatVal || selCat;
-  const abbr = document.getElementById('add-abbr').value.trim();
-  const full = document.getElementById('add-full').value.trim();
-  const zh = document.getElementById('add-zh').value.trim();
-
-  if (!cat) { showToast('請選擇或輸入分類', true); return; }
-  if (!abbr) { showToast('縮寫不能為空', true); return; }
-  if (!full) { showToast('英文全稱不能為空', true); return; }
-
-  if (!DATA[cat]) DATA[cat] = [];
-  // Check duplicate
-  const exists = DATA[cat].some(e => e.abbr.toLowerCase() === abbr.toLowerCase());
-  if (exists) { showToast('此分類已有相同縮寫', true); return; }
-
-  DATA[cat].push({abbr, full, zh});
-  closeAddModal();
-  activecat = cat;
-  query = '';
-  document.getElementById('search').value = '';
-  document.getElementById('clear-btn').style.display = 'none';
-  openEntries.clear();
-  render();
-  showToast('✓ 已新增「' + abbr + '」到 ' + cat);
-}
-
-// Close modal on background click
-document.getElementById('add-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeAddModal();
-});
-
-// ── Render ────────────────────────────────────────────────
-function hl(text, q) {
-  if (!q || !text) return text || '';
-  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
-}
-
-function renderCats() {
-  const grid = document.getElementById('cat-grid');
-  grid.innerHTML = '';
-  Object.entries(DATA).forEach(([cat, entries]) => {
-    const btn = document.createElement('button');
-    btn.className = 'cat-btn' + (activecat === cat ? ' active' : '');
-    btn.innerHTML = '<span>' + (CAT_LABELS[cat] || cat) + '</span><span class="count">' + entries.length + '</span>';
-    btn.onclick = () => {
-      activecat = (activecat === cat) ? null : cat;
-      query = '';
-      document.getElementById('search').value = '';
-      document.getElementById('clear-btn').style.display = 'none';
-      render();
-    };
-    grid.appendChild(btn);
-  });
-}
-
-function render() {
-  renderCats();
-  const container = document.getElementById('results');
-  const q = query.toLowerCase().trim();
-
-  if (!activecat && !q) {
-    container.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#bbb; font-size:14px;">請選擇分類或輸入關鍵字搜尋</div>';
-    return;
+  function switchTable(tabName) {
+    currentTab = tabName;
+    activeCat = null;
+    query = '';
+    openEntries.clear();
+    
+    // 更新標籤樣式
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    if(tabName === 'Data') document.getElementById('tab-data').classList.add('active');
+    if(tabName === 'Manufacturing') document.getElementById('tab-mfg').classList.add('active');
+    if(tabName === 'Materials') document.getElementById('tab-mat').classList.add('active');
+    
+    document.getElementById('search').value = '';
+    render();
   }
 
-  const cats = activecat ? [activecat] : Object.keys(DATA);
-  const sections = [];
-  cats.forEach(cat => {
-    let entries = DATA[cat];
-    if (q) entries = entries.filter(e =>
-      e.abbr.toLowerCase().includes(q) ||
-      (e.full && e.full.toLowerCase().includes(q)) ||
-      (e.zh && e.zh.toLowerCase().includes(q))
-    );
-    if (entries.length) sections.push({cat, entries});
-  });
+  function render() {
+    const container = document.getElementById('results');
+    const catGrid = document.getElementById('cat-grid');
+    const q = query.toLowerCase().trim();
+    let html = '';
 
-  if (!sections.length) {
-    container.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;">找不到符合的內容</div>';
-    return;
+    // --- 處理 9 格分類顯示 (只有 Data 和 Materials 有分類) ---
+    if (typeof DATABASE[currentTab] === 'object' && !Array.isArray(DATABASE[currentTab])) {
+      catGrid.style.display = 'grid';
+      const categories = Object.keys(DATABASE[currentTab]);
+      catGrid.innerHTML = categories.map(cat => `
+        <button class="cat-btn ${activeCat === cat ? 'active' : ''}" onclick="filterCat('${cat}')">
+          ${cat} <div style="font-size:10px; opacity:0.5">${DATABASE[currentTab][cat].length}</div>
+        </button>
+      `).join('');
+    } else {
+      catGrid.style.display = 'none';
+    }
+
+    // --- 渲染內容 ---
+    if (currentTab === 'Manufacturing') {
+      // L1-L12 特殊圖卡
+      html = '<div class="level-grid">';
+      DATABASE[currentTab].forEach(item => {
+        html += `
+          <div class="level-card">
+            <div class="level-badge">${item.key}</div>
+            <div class="level-content">
+              <div class="level-title">${item.title}</div>
+              <div class="level-desc">${item.desc}</div>
+            </div>
+          </div>`;
+      });
+      html += '</div>';
+    } else {
+      // 傳統列表
+      const dataObj = DATABASE[currentTab];
+      const categories = activeCat ? [activeCat] : Object.keys(dataObj);
+      
+      categories.forEach(cat => {
+        const filtered = dataObj[cat].filter(i => 
+          !q || i.key.toLowerCase().includes(q) || i.title.toLowerCase().includes(q)
+        );
+        
+        if (filtered.length > 0) {
+          html += `<div style="font-size:11px; font-weight:700; color:#888; margin:15px 0 8px; text-transform:uppercase; letter-spacing:1px;">${cat}</div>`;
+          filtered.forEach((item, idx) => {
+            const id = currentTab + cat + idx;
+            html += `
+              <div class="entry ${openEntries.has(id) ? 'open' : ''}">
+                <div class="entry-header" onclick="toggle('${id}')">
+                  <span class="abbr-tag">${item.key}</span>
+                  <span class="full-preview">${item.title}</span>
+                </div>
+                <div class="entry-detail">
+                  <p style="font-size:12px; font-weight:bold; color:#0056b3; margin-bottom:5px;">FULL DESCRIPTION:</p>
+                  <p style="font-size:14px; color:#444;">${item.title}</p>
+                  ${item.desc ? `<p style="margin-top:10px; border-top:1px solid #eee; padding-top:10px; color:#666;">${item.desc}</p>` : ''}
+                </div>
+              </div>`;
+          });
+        }
+      });
+    }
+    container.innerHTML = html || '<div style="text-align:center; padding:50px; color:#999;">查無資料</div>';
   }
 
-  container.innerHTML = sections.map(({cat, entries}) => `
-    <div class="section">
-      <div class="section-header">${CAT_LABELS[cat] || cat}</div>
-      <div class="entry-list">
-        ${entries.map((e, i) => {
-          const id = cat + '_' + i;
-          const isOpen = openEntries.has(id);
-          return `
-            <div class="entry ${isOpen ? 'open' : ''}" data-id="${id}">
-              <div class="entry-header" onclick="toggle('${id}')">
-                <span class="abbr-tag">${hl(e.abbr, query)}</span>
-                <span class="full-preview">${hl(e.full, query)}</span>
-                <span class="chevron">▶</span>
-              </div>
-              <div class="entry-detail">
-                <div class="detail-label">英文全稱</div>
-                <div class="detail-val">${hl(e.full, query)}</div>
-                ${e.zh ? `<div class="detail-label">中文說明</div><div class="detail-val">${hl(e.zh, query)}</div>` : ''}
-              </div>
-            </div>`;
-        }).join('')}
-      </div>
-    </div>
-  `).join('');
-}
+  function filterCat(cat) {
+    activeCat = (activeCat === cat) ? null : cat;
+    render();
+  }
 
-function toggle(id) {
-  if (openEntries.has(id)) openEntries.delete(id);
-  else openEntries.add(id);
+  function toggle(id) {
+    if (openEntries.has(id)) openEntries.delete(id);
+    else openEntries.add(id);
+    render();
+  }
+
+  document.getElementById('search').addEventListener('input', (e) => {
+    query = e.target.value;
+    if (query) activeCat = null;
+    render();
+  });
+
+  // 初始渲染
   render();
-}
-
-document.getElementById('search').addEventListener('input', function() {
-  query = this.value;
-  if (query) activecat = null;
-  openEntries.clear();
-  document.getElementById('clear-btn').style.display = query ? 'flex' : 'none';
-  render();
-});
-
-document.getElementById('clear-btn').addEventListener('click', function() {
-  document.getElementById('search').value = '';
-  query = '';
-  this.style.display = 'none';
-  render();
-});
-
-render();
 </script>
 </body>
 </html>
