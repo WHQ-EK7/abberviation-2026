@@ -3,314 +3,236 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Wistron 伺服器事業群 - 數位知識庫</title>
+<title>伺服器事業群 - 數位知識庫</title>
 <style>
   /* --- 基礎設定 --- */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: #f4f7f9;
-    color: #333;
-    line-height: 1.5;
+    color: #1a1a1a;
+    min-height: 100vh;
   }
 
   /* --- 頂部導航與搜尋 --- */
   .page-header {
     background: #fff;
-    border-bottom: 1px solid #dee2e6;
-    padding: 16px;
+    border-bottom: 0.5px solid rgba(0,0,0,0.1);
+    padding: 16px 24px 12px;
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   }
-  .table-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-  }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .page-header h1 { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+  
+  /* 分頁切換按鈕 */
+  .tab-nav { display: flex; gap: 10px; margin-bottom: 16px; justify-content: center; }
   .tab-btn {
-    padding: 8px 20px;
-    border: none;
-    background: #e9ecef;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    color: #495057;
+    padding: 8px 20px; border-radius: 20px; border: 1px solid #ddd;
+    background: #fff; cursor: pointer; font-size: 14px; font-weight: 600; color: #666;
     transition: all 0.2s;
   }
-  .tab-btn.active {
-    background: #0056b3;
-    color: #fff;
-  }
-  .search-bar {
-    position: relative;
-    max-width: 800px;
-    margin: 0 auto;
-  }
+  .tab-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+  .search-bar { position: relative; max-width: 860px; margin: 0 auto; }
   .search-bar input {
-    width: 100%;
-    padding: 12px 40px;
-    font-size: 15px;
-    border: 1px solid #ced4da;
-    border-radius: 12px;
-    background: #f8f9fa;
-    outline: none;
+    width: 100%; padding: 10px 40px; font-size: 15px;
+    border: 1px solid rgba(0,0,0,0.15); border-radius: 10px;
+    background: #f9f9f8; outline: none;
   }
-  .search-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #aaa;
-  }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; }
+  
+  .main { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
 
-  .main { max-width: 1200px; margin: 0 auto; padding: 20px; }
-
-  /* --- L1-L12 製造層級專屬圖卡佈局 --- */
-  .level-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-  }
-  .level-card {
-    background: #fff;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-    border-top: 6px solid #0056b3;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s;
-  }
-  .level-badge {
-    background: #0056b3;
-    color: #fff;
-    padding: 10px 15px;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: 1px;
-  }
-  .level-content { padding: 15px; flex-grow: 1; }
-  .level-title {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 10px;
-    color: #212529;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 8px;
-  }
-  .level-desc { font-size: 13px; color: #6c757d; line-height: 1.6; }
-
-  /* --- 列表搜尋模式 --- */
+  /* --- 縮寫查詢：9格分類 --- */
   .category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
+    display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; margin-bottom: 24px;
   }
   .cat-btn {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 15px;
-    background: #fff;
-    cursor: pointer;
-    text-align: center;
-    font-size: 12px;
-    font-weight: 600;
-    transition: 0.2s;
+    width: 100%; padding: 10px 4px; border: 1px solid rgba(0,0,0,0.1); border-radius: 20px;
+    background: #fff; color: #555; font-size: 11px; font-weight: 500; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
   }
-  .cat-btn.active { background: #343a40; color: #fff; border-color: #343a40; }
-  
-  .entry { background: #fff; border: 1px solid #e9ecef; border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
-  .entry-header { display: flex; padding: 15px; cursor: pointer; align-items: center; }
-  .abbr-tag { font-weight: 700; min-width: 100px; color: #0056b3; font-size: 15px; }
-  .full-preview { color: #6c757d; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-  .entry-detail { display: none; padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; }
+  .cat-btn.active { background: #1a1a1a; color: #fff; }
+  .cat-btn .count { font-size: 10px; margin-top: 4px; opacity: 0.6; }
+
+  /* --- 製造層級：L1~L12 圖卡佈局 --- */
+  .mfg-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;
+  }
+  .mfg-card {
+    background: #fff; border-radius: 12px; border-top: 6px solid #0056b3;
+    padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column;
+  }
+  .mfg-badge {
+    background: #0056b3; color: #fff; padding: 4px 12px; border-radius: 4px;
+    font-size: 16px; font-weight: 800; align-self: flex-start; margin-bottom: 12px;
+  }
+  .mfg-title { font-size: 17px; font-weight: 700; margin-bottom: 10px; color: #1a1a1a; }
+  .mfg-desc { font-size: 14px; color: #666; line-height: 1.6; }
+
+  /* --- 列表樣式 --- */
+  .entry { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; margin-bottom: 6px; }
+  .entry-header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+  .abbr-tag { font-size: 14px; font-weight: 700; min-width: 85px; color: #0056b3; }
+  .full-preview { font-size: 13px; color: #666; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .entry-detail { display: none; padding: 12px 14px; background: #fafafa; border-top: 0.5px solid #eee; }
   .entry.open .entry-detail { display: block; }
-  
-  @media (max-width: 600px) {
-    .category-grid { grid-template-columns: repeat(3, 1fr); }
-    .level-grid { grid-template-columns: 1fr; }
+
+  @media (max-width: 800px) { 
+    .category-grid { grid-template-columns: repeat(3, 1fr); } 
+    .mfg-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
 <div class="page-header">
-  <div class="table-tabs">
-    <button class="tab-btn active" id="tab-data" onclick="switchTable('Data')">縮寫查詢</button>
-    <button class="tab-btn" id="tab-mfg" onclick="switchTable('Manufacturing')">L1-L12 製造層級</button>
-    <button class="tab-btn" id="tab-mat" onclick="switchTable('Materials')">材質資料庫</button>
+  <div class="header-top">
+    <h1>伺服器事業群數位資料庫</h1>
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchPage('search')">縮寫查詢</button>
+      <button class="tab-btn" onclick="switchPage('mfg')">製造層級 (L1-L12)</button>
+    </div>
   </div>
-  <div class="search-bar">
+  
+  <div class="search-bar" id="search-bar-container">
     <span class="search-icon">⌕</span>
-    <input type="text" id="search" placeholder="搜尋縮寫、關鍵字..." autocomplete="off" />
+    <input type="text" id="search" placeholder="搜尋關鍵字..." autocomplete="off" />
   </div>
 </div>
 
 <div class="main">
-  <div class="category-grid" id="cat-grid"></div>
-  <div id="results"></div>
+  <div id="page-search">
+    <div class="category-grid" id="cat-grid"></div>
+    <div id="results"></div>
+  </div>
+
+  <div id="page-mfg" style="display: none;">
+    <div class="mfg-grid" id="mfg-list"></div>
+  </div>
 </div>
 
 <script>
-  // --- 內建資料庫 (不連結外部檔案) ---
-  const DATABASE = {
-    "Data": {
-      "Schedule / Phase": [
-        { key: "NUDD", title: "New, Unique, Different, Difficult", desc: "" },
-        { key: "C0", title: "Concept", desc: "概念設計階段" },
-        { key: "EVT", title: "Engineering Verification Test", desc: "工程驗證測試" },
-        { key: "PVT", title: "Production Verification Test", desc: "生產驗證測試" },
-        { key: "GA", title: "General Availability", desc: "產品正式發佈上線" }
-      ],
-      "Modules": [
-        { key: "SM", title: "Storage Module", desc: "存儲模組" },
-        { key: "GPU", title: "Graphics Processing Unit", desc: "圖形處理器" },
-        { key: "PSU", title: "Power Supply Unit", desc: "電源供應器" }
-      ],
-      "NV Relating": [
-        { key: "DGX", title: "Deep GPU Xceleration", desc: "NVIDIA AI 訓練系統平台" },
-        { key: "NVLink", title: "NVIDIA High-Speed Interconnect", desc: "NVIDIA 高速互連技術" }
-      ]
-    },
-    "Manufacturing": [
-      { key: "Level 1", title: "Parts manufacturing", desc: "Parts manufacturing - this includes non-painted parts and molding parts on the component level." },
-      { key: "Level 2", title: "Piece Parts Sub Assembly", desc: "Piece Parts Sub Assembly - some level of assembly." },
-      { key: "Level 3", title: "Case Assembly", desc: "Metals and plastics are integrated together and shipped as a case (i.e. chassis)." },
-      { key: "Level 4", title: "Kit Assembly", desc: "Metals and Plastics + PSU and/or Flat Cable and/or Backplane are shipped as a kit or bag." },
-      { key: "Level 5", title: "Enclosure parts", desc: "All enclosure parts from Level 4 attached, cables integrated, I/O tested." },
-      { key: "Level 6", title: "Motherboard Integration", desc: "Integration of motherboard into chassis enclosure and power on test." },
-      { key: "Level 7", title: "Add-on Cards", desc: "Integration of add-on cards into server barebone with ability to test." },
-      { key: "Level 8", title: "Hard Drives", desc: "Integration of hard drives into server barebone with ability to test." },
-      { key: "Level 9", title: "CPU & Memory", desc: "Integration of CPU and memory into server barebone with ability to test." },
-      { key: "Level 10", title: "Full System", desc: "Full assembly of server with full system and component level testing, OS/software integration." },
-      { key: "Level 11", title: "Rack Integration", desc: "Node-level assembly, testing, OS/software loading followed by rack cabinet assembly." },
-      { key: "Level 12", title: "Multi-Rack Level", desc: "Rack to multi-rack level manufacturing including all networking with full validation." }
-    ],
-    "Materials": {
-      "Metals": [
-        { key: "SGCC", title: "Steel Galvanized Cold rolled Coil", desc: "熱浸鍍鋅冷軋鋼板" },
-        { key: "SUS", title: "Steel Use Stainless", desc: "不銹鋼" }
-      ],
-      "Surfaces": [
-        { key: "NCVM", title: "Non-Conductive Vacuum Metallization", desc: "金屬不導電真空電鍍" },
-        { key: "PVD", title: "Physical Vapor Deposition", desc: "物理氣相沉積" }
-      ]
-    }
-  };
+// --- 資料庫 ---
+let DATA = {
+  "Schedule / Phase": [{abbr:"NUDD",full:"New, Unique, Different, Difficult",zh:""},{abbr:"EVT",full:"Engineering Verification Test",zh:"工程驗證測試"}],
+  "Modules": [{abbr:"SM",full:"Storage Module",zh:"存儲模組"},{abbr:"PSU",full:"Power Supply Unit",zh:"電源供應器"}],
+  "Board and Component": [{abbr:"HPM",full:"Host Processor Module",zh:"主處理器模組"}]
+};
 
-  let currentTab = 'Data';
-  let activeCat = null;
-  let query = '';
-  let openEntries = new Set();
+const MFG_LEVELS = [
+  { lv: "Level 1", title: "Parts manufacturing", desc: "零件製造：包括組件級別的未噴漆零件和模製零件。" },
+  { lv: "Level 2", title: "Piece Parts Sub Assembly", desc: "零件次組裝：進行一定程度的零件預組裝。" },
+  { lv: "Level 3", title: "Chassis Assembly", desc: "機殼組裝：金屬和塑料件整合在一起，並以機箱（Chassis）形式出貨。" },
+  { lv: "Level 4", title: "Kit Assembly", desc: "套件組裝：機殼件 + 電源供應器 (PSU) 或排線等以套件形式包裝。" },
+  { lv: "Level 5", title: "Enclosure Parts Integration", desc: "外殼組件整合：安裝所有 Level 4 的外殼零件，整合線材並進行 I/O 測試。" },
+  { lv: "Level 6", title: "Motherboard Integration", desc: "主機板整合：將主機板安裝至機殼中並進行開機測試 (Power on test)。" },
+  { lv: "Level 7", title: "Add-on Cards Integration", desc: "擴充卡整合：在伺服器準系統中安裝各式擴充卡並測試。" },
+  { lv: "Level 8", title: "Hard Drives Integration", desc: "硬碟整合：在伺服器準系統中安裝硬碟並測試。" },
+  { lv: "Level 9", title: "CPU & Memory Integration", desc: "處理器與記憶體整合：安裝 CPU 與 DIMM 並確保具備測試能力。" },
+  { lv: "Level 10", title: "Full System Assembly", desc: "全系統組裝：完整的伺服器組裝與全系統測試，包含軟體/作業系統整合。" },
+  { lv: "Level 11", title: "Rack Integration", desc: "機櫃整合：節點級別測試完成後，裝載至機櫃並進行全電纜聯網測試。" },
+  { lv: "Level 12", title: "Multi-Rack / Solutions", desc: "多機櫃解決方案：跨機櫃級別的製造，包含網路驗證、雲端作業系統優化等。" }
+];
 
-  function switchTable(tabName) {
-    currentTab = tabName;
-    activeCat = null;
-    query = '';
-    openEntries.clear();
-    
-    // 更新標籤樣式
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    if(tabName === 'Data') document.getElementById('tab-data').classList.add('active');
-    if(tabName === 'Manufacturing') document.getElementById('tab-mfg').classList.add('active');
-    if(tabName === 'Materials') document.getElementById('tab-mat').classList.add('active');
-    
-    document.getElementById('search').value = '';
-    render();
+let activePage = 'search';
+let activecat = null;
+let query = '';
+let openEntries = new Set();
+
+// --- 頁面切換 ---
+function switchPage(page) {
+  activePage = page;
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+
+  if (page === 'search') {
+    document.getElementById('page-search').style.display = 'block';
+    document.getElementById('page-mfg').style.display = 'none';
+    document.getElementById('search-bar-container').style.visibility = 'visible';
+  } else {
+    document.getElementById('page-search').style.display = 'none';
+    document.getElementById('page-mfg').style.display = 'block';
+    document.getElementById('search-bar-container').style.visibility = 'hidden';
+    renderMfg();
+  }
+}
+
+// --- 製造層級渲染 ---
+function renderMfg() {
+  const container = document.getElementById('mfg-list');
+  container.innerHTML = MFG_LEVELS.map(item => `
+    <div class="mfg-card">
+      <div class="mfg-badge">${item.lv}</div>
+      <div class="mfg-title">${item.title}</div>
+      <div class="mfg-desc">${item.desc}</div>
+    </div>
+  `).join('');
+}
+
+// --- 縮寫查詢渲染 ---
+function renderCats() {
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = '';
+  Object.entries(DATA).forEach(([cat, entries]) => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (activecat === cat ? ' active' : '');
+    btn.innerHTML = `<span>${cat}</span><span class="count">${entries.length}</span>`;
+    btn.onclick = () => { activecat = (activecat === cat) ? null : cat; renderSearch(); };
+    grid.appendChild(btn);
+  });
+}
+
+function renderSearch() {
+  renderCats();
+  const container = document.getElementById('results');
+  const q = query.toLowerCase().trim();
+  
+  if (!activecat && !q) {
+    container.innerHTML = '<div style="text-align:center; padding:60px; color:#bbb;">請選擇分類或搜尋</div>';
+    return;
   }
 
-  function render() {
-    const container = document.getElementById('results');
-    const catGrid = document.getElementById('cat-grid');
-    const q = query.toLowerCase().trim();
-    let html = '';
-
-    // --- 處理 9 格分類顯示 (只有 Data 和 Materials 有分類) ---
-    if (typeof DATABASE[currentTab] === 'object' && !Array.isArray(DATABASE[currentTab])) {
-      catGrid.style.display = 'grid';
-      const categories = Object.keys(DATABASE[currentTab]);
-      catGrid.innerHTML = categories.map(cat => `
-        <button class="cat-btn ${activeCat === cat ? 'active' : ''}" onclick="filterCat('${cat}')">
-          ${cat} <div style="font-size:10px; opacity:0.5">${DATABASE[currentTab][cat].length}</div>
-        </button>
-      `).join('');
-    } else {
-      catGrid.style.display = 'none';
-    }
-
-    // --- 渲染內容 ---
-    if (currentTab === 'Manufacturing') {
-      // L1-L12 特殊圖卡
-      html = '<div class="level-grid">';
-      DATABASE[currentTab].forEach(item => {
+  let html = '';
+  const cats = activecat ? [activecat] : Object.keys(DATA);
+  cats.forEach(cat => {
+    const filtered = DATA[cat].filter(i => !q || i.abbr.toLowerCase().includes(q) || i.full.toLowerCase().includes(q));
+    if (filtered.length > 0) {
+      html += `<div style="font-size:12px; font-weight:700; color:#888; margin:15px 0 8px;">${cat}</div>`;
+      filtered.forEach((e, i) => {
+        const id = cat + i;
         html += `
-          <div class="level-card">
-            <div class="level-badge">${item.key}</div>
-            <div class="level-content">
-              <div class="level-title">${item.title}</div>
-              <div class="level-desc">${item.desc}</div>
+          <div class="entry ${openEntries.has(id) ? 'open' : ''}">
+            <div class="entry-header" onclick="toggle('${id}')">
+              <span class="abbr-tag">${e.abbr}</span>
+              <span class="full-preview">${e.full}</span>
+            </div>
+            <div class="entry-detail">
+              <p><strong>英文全稱:</strong> ${e.full}</p>
+              ${e.zh ? `<p style="margin-top:8px;"><strong>中文說明:</strong> ${e.zh}</p>` : ''}
             </div>
           </div>`;
       });
-      html += '</div>';
-    } else {
-      // 傳統列表
-      const dataObj = DATABASE[currentTab];
-      const categories = activeCat ? [activeCat] : Object.keys(dataObj);
-      
-      categories.forEach(cat => {
-        const filtered = dataObj[cat].filter(i => 
-          !q || i.key.toLowerCase().includes(q) || i.title.toLowerCase().includes(q)
-        );
-        
-        if (filtered.length > 0) {
-          html += `<div style="font-size:11px; font-weight:700; color:#888; margin:15px 0 8px; text-transform:uppercase; letter-spacing:1px;">${cat}</div>`;
-          filtered.forEach((item, idx) => {
-            const id = currentTab + cat + idx;
-            html += `
-              <div class="entry ${openEntries.has(id) ? 'open' : ''}">
-                <div class="entry-header" onclick="toggle('${id}')">
-                  <span class="abbr-tag">${item.key}</span>
-                  <span class="full-preview">${item.title}</span>
-                </div>
-                <div class="entry-detail">
-                  <p style="font-size:12px; font-weight:bold; color:#0056b3; margin-bottom:5px;">FULL DESCRIPTION:</p>
-                  <p style="font-size:14px; color:#444;">${item.title}</p>
-                  ${item.desc ? `<p style="margin-top:10px; border-top:1px solid #eee; padding-top:10px; color:#666;">${item.desc}</p>` : ''}
-                </div>
-              </div>`;
-          });
-        }
-      });
     }
-    container.innerHTML = html || '<div style="text-align:center; padding:50px; color:#999;">查無資料</div>';
-  }
-
-  function filterCat(cat) {
-    activeCat = (activeCat === cat) ? null : cat;
-    render();
-  }
-
-  function toggle(id) {
-    if (openEntries.has(id)) openEntries.delete(id);
-    else openEntries.add(id);
-    render();
-  }
-
-  document.getElementById('search').addEventListener('input', (e) => {
-    query = e.target.value;
-    if (query) activeCat = null;
-    render();
   });
+  container.innerHTML = html || '<div style="text-align:center; padding:20px;">無相符內容</div>';
+}
 
-  // 初始渲染
-  render();
+function toggle(id) {
+  if (openEntries.has(id)) openEntries.delete(id);
+  else openEntries.add(id);
+  renderSearch();
+}
+
+document.getElementById('search').addEventListener('input', (e) => {
+  query = e.target.value;
+  if (query) activecat = null;
+  renderSearch();
+});
+
+renderSearch();
 </script>
 </body>
 </html>
