@@ -4,81 +4,74 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>伺服器事業群 - 數位知識庫</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
-  /* --- 基礎設定 --- */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #f4f7f9;
-    color: #1a1a1a;
-    min-height: 100vh;
+    background: #f4f7f9; color: #1a1a1a; min-height: 100vh;
   }
 
-  /* --- 頂部導航與搜尋 --- */
-  .page-header {
-    background: #fff;
-    border-bottom: 0.5px solid rgba(0,0,0,0.1);
-    padding: 16px 24px 12px;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-  }
+  /* --- 頂部導覽 --- */
+  .page-header { background: #fff; border-bottom: 0.5px solid rgba(0,0,0,0.1); padding: 16px 24px; position: sticky; top: 0; z-index: 1000; }
   .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .page-header h1 { font-size: 18px; font-weight: 700; color: #1a1a1a; }
-  
-  /* 分頁切換按鈕 */
-  .tab-nav { display: flex; gap: 10px; margin-bottom: 16px; justify-content: center; }
+  .tab-nav { display: flex; gap: 10px; }
   .tab-btn {
-    padding: 8px 20px; border-radius: 20px; border: 1px solid #ddd;
-    background: #fff; cursor: pointer; font-size: 14px; font-weight: 600; color: #666;
-    transition: all 0.2s;
+    padding: 8px 18px; border-radius: 20px; border: 1px solid #ddd; background: #fff;
+    cursor: pointer; font-size: 13px; font-weight: 600; color: #666; transition: 0.2s;
   }
   .tab-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 
+  /* --- 功能按鈕區 --- */
+  .action-bar { display: flex; gap: 10px; margin-bottom: 16px; justify-content: center; flex-wrap: wrap; }
+  .btn-action {
+    padding: 8px 14px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer;
+    font-weight: 600; display: flex; align-items: center; gap: 5px;
+  }
+  .btn-add { background: #0056b3; color: #fff; }
+  .btn-excel { background: #217346; color: #fff; } /* Excel 綠 */
+  
+  #excel-input { display: none; }
+
   .search-bar { position: relative; max-width: 860px; margin: 0 auto; }
   .search-bar input {
-    width: 100%; padding: 10px 40px; font-size: 15px;
-    border: 1px solid rgba(0,0,0,0.15); border-radius: 10px;
-    background: #f9f9f8; outline: none;
+    width: 100%; padding: 10px 40px; font-size: 15px; border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 10px; background: #f9f9f8; outline: none;
   }
   .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; }
   
   .main { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
 
-  /* --- 縮寫查詢：9格分類 --- */
-  .category-grid {
-    display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; margin-bottom: 24px;
-  }
+  /* --- 九宮格分類 --- */
+  .category-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; margin-bottom: 24px; }
   .cat-btn {
     width: 100%; padding: 10px 4px; border: 1px solid rgba(0,0,0,0.1); border-radius: 20px;
     background: #fff; color: #555; font-size: 11px; font-weight: 500; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
   }
   .cat-btn.active { background: #1a1a1a; color: #fff; }
-  .cat-btn .count { font-size: 10px; margin-top: 4px; opacity: 0.6; }
 
-  /* --- 製造層級：L1~L12 圖卡佈局 --- */
-  .mfg-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;
-  }
-  .mfg-card {
-    background: #fff; border-radius: 12px; border-top: 6px solid #0056b3;
-    padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column;
-  }
-  .mfg-badge {
-    background: #0056b3; color: #fff; padding: 4px 12px; border-radius: 4px;
-    font-size: 16px; font-weight: 800; align-self: flex-start; margin-bottom: 12px;
-  }
-  .mfg-title { font-size: 17px; font-weight: 700; margin-bottom: 10px; color: #1a1a1a; }
-  .mfg-desc { font-size: 14px; color: #666; line-height: 1.6; }
+  /* --- 製造層級佈局 --- */
+  .mfg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .mfg-card { background: #fff; border-radius: 12px; border-top: 6px solid #0056b3; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .mfg-badge { background: #0056b3; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 14px; font-weight: 800; display: inline-block; margin-bottom: 12px; }
 
-  /* --- 列表樣式 --- */
+  /* --- 列表與 Modal --- */
   .entry { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; margin-bottom: 6px; }
   .entry-header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
   .abbr-tag { font-size: 14px; font-weight: 700; min-width: 85px; color: #0056b3; }
-  .full-preview { font-size: 13px; color: #666; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .entry-detail { display: none; padding: 12px 14px; background: #fafafa; border-top: 0.5px solid #eee; }
   .entry.open .entry-detail { display: block; }
+
+  #modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000;
+  }
+  .modal { background: #fff; padding: 24px; border-radius: 16px; width: 90%; max-width: 400px; }
+  .modal input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; }
+  .modal-btns { display: flex; gap: 10px; }
+  .btn-save { flex: 1; background: #1a1a1a; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
+  .btn-cancel { flex: 1; background: #eee; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
 
   @media (max-width: 800px) { 
     .category-grid { grid-template-columns: repeat(3, 1fr); } 
@@ -90,16 +83,23 @@
 
 <div class="page-header">
   <div class="header-top">
-    <h1>伺服器事業群數位資料庫</h1>
+    <h1>數位知識庫</h1>
     <div class="tab-nav">
-      <button class="tab-btn active" onclick="switchPage('search')">縮寫查詢</button>
-      <button class="tab-btn" onclick="switchPage('mfg')">製造層級 (L1-L12)</button>
+      <button class="tab-btn active" id="btn-tab-search" onclick="switchPage('search')">縮寫查詢</button>
+      <button class="tab-btn" id="btn-tab-mfg" onclick="switchPage('mfg')">製造層級</button>
     </div>
   </div>
   
-  <div class="search-bar" id="search-bar-container">
-    <span class="search-icon">⌕</span>
-    <input type="text" id="search" placeholder="搜尋關鍵字..." autocomplete="off" />
+  <div id="search-section">
+    <div class="action-bar">
+      <button class="btn-action btn-add" onclick="openModal()">＋ 單獨新增</button>
+      <button class="btn-action btn-excel" onclick="triggerExcel()">📥 批次更新 (Excel)</button>
+      <input type="file" id="excel-input" accept=".xlsx, .xls" onchange="handleExcel(event)" />
+    </div>
+    <div class="search-bar">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search" placeholder="搜尋關鍵字..." />
+    </div>
   </div>
 </div>
 
@@ -108,99 +108,117 @@
     <div class="category-grid" id="cat-grid"></div>
     <div id="results"></div>
   </div>
-
   <div id="page-mfg" style="display: none;">
     <div class="mfg-grid" id="mfg-list"></div>
   </div>
 </div>
 
+<div id="modal-overlay">
+  <div class="modal">
+    <h2 style="margin-bottom:15px; font-size:18px;">新增縮寫內容</h2>
+    <input type="text" id="new-cat" placeholder="分類 (例如: Modules)" list="cat-list">
+    <datalist id="cat-list">
+      <option value="Schedule / Phase"><option value="Modules"><option value="Board and Component">
+      <option value="NV Relating"><option value="Modules Cooling"><option value="Others">
+    </datalist>
+    <input type="text" id="new-abbr" placeholder="縮寫 (例如: DPU)">
+    <input type="text" id="new-full" placeholder="英文全稱">
+    <input type="text" id="new-zh" placeholder="中文說明 (選填)">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveNewEntry()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// --- 資料庫 ---
 let DATA = {
-  "Schedule / Phase": [{abbr:"NUDD",full:"New, Unique, Different, Difficult",zh:""},{abbr:"EVT",full:"Engineering Verification Test",zh:"工程驗證測試"}],
-  "Modules": [{abbr:"SM",full:"Storage Module",zh:"存儲模組"},{abbr:"PSU",full:"Power Supply Unit",zh:"電源供應器"}],
-  "Board and Component": [{abbr:"HPM",full:"Host Processor Module",zh:"主處理器模組"}]
+  "Schedule / Phase": [{abbr:"NUDD",full:"New, Unique, Different, Difficult",zh:""}],
+  "Modules": [{abbr:"SM",full:"Storage Module",zh:"存儲模組"}]
 };
 
 const MFG_LEVELS = [
-  { lv: "Level 1", title: "Parts manufacturing", desc: "零件製造：包括組件級別的未噴漆零件和模製零件。" },
-  { lv: "Level 2", title: "Piece Parts Sub Assembly", desc: "零件次組裝：進行一定程度的零件預組裝。" },
-  { lv: "Level 3", title: "Chassis Assembly", desc: "機殼組裝：金屬和塑料件整合在一起，並以機箱（Chassis）形式出貨。" },
-  { lv: "Level 4", title: "Kit Assembly", desc: "套件組裝：機殼件 + 電源供應器 (PSU) 或排線等以套件形式包裝。" },
-  { lv: "Level 5", title: "Enclosure Parts Integration", desc: "外殼組件整合：安裝所有 Level 4 的外殼零件，整合線材並進行 I/O 測試。" },
-  { lv: "Level 6", title: "Motherboard Integration", desc: "主機板整合：將主機板安裝至機殼中並進行開機測試 (Power on test)。" },
-  { lv: "Level 7", title: "Add-on Cards Integration", desc: "擴充卡整合：在伺服器準系統中安裝各式擴充卡並測試。" },
-  { lv: "Level 8", title: "Hard Drives Integration", desc: "硬碟整合：在伺服器準系統中安裝硬碟並測試。" },
-  { lv: "Level 9", title: "CPU & Memory Integration", desc: "處理器與記憶體整合：安裝 CPU 與 DIMM 並確保具備測試能力。" },
-  { lv: "Level 10", title: "Full System Assembly", desc: "全系統組裝：完整的伺服器組裝與全系統測試，包含軟體/作業系統整合。" },
-  { lv: "Level 11", title: "Rack Integration", desc: "機櫃整合：節點級別測試完成後，裝載至機櫃並進行全電纜聯網測試。" },
-  { lv: "Level 12", title: "Multi-Rack / Solutions", desc: "多機櫃解決方案：跨機櫃級別的製造，包含網路驗證、雲端作業系統優化等。" }
+  { lv: "Level 1", title: "Parts manufacturing", desc: "零件製造層級。" },
+  { lv: "Level 10", title: "Full System Assembly", desc: "完整系統組裝與測試。" }
 ];
 
 let activePage = 'search';
-let activecat = null;
+let activeCat = null;
 let query = '';
 let openEntries = new Set();
 
 // --- 頁面切換 ---
 function switchPage(page) {
   activePage = page;
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  event.target.classList.add('active');
-
-  if (page === 'search') {
-    document.getElementById('page-search').style.display = 'block';
-    document.getElementById('page-mfg').style.display = 'none';
-    document.getElementById('search-bar-container').style.visibility = 'visible';
-  } else {
-    document.getElementById('page-search').style.display = 'none';
-    document.getElementById('page-mfg').style.display = 'block';
-    document.getElementById('search-bar-container').style.visibility = 'hidden';
-    renderMfg();
-  }
+  document.getElementById('btn-tab-search').classList.toggle('active', page === 'search');
+  document.getElementById('btn-tab-mfg').classList.toggle('active', page === 'mfg');
+  document.getElementById('page-search').style.display = page === 'search' ? 'block' : 'none';
+  document.getElementById('page-mfg').style.display = page === 'mfg' ? 'block' : 'none';
+  document.getElementById('search-section').style.display = page === 'search' ? 'block' : 'none';
+  if (page === 'mfg') renderMfg();
 }
 
-// --- 製造層級渲染 ---
-function renderMfg() {
-  const container = document.getElementById('mfg-list');
-  container.innerHTML = MFG_LEVELS.map(item => `
-    <div class="mfg-card">
-      <div class="mfg-badge">${item.lv}</div>
-      <div class="mfg-title">${item.title}</div>
-      <div class="mfg-desc">${item.desc}</div>
-    </div>
-  `).join('');
+// --- Excel 批次處理 ---
+function triggerExcel() { document.getElementById('excel-input').click(); }
+
+function handleExcel(e) {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const bstr = evt.target.result;
+    const wb = XLSX.read(bstr, { type: 'binary' });
+    const wsname = wb.SheetNames[0];
+    const data = XLSX.utils.sheet_to_json(wb.Sheets[wsname], { header: 1 });
+
+    // 假設 Excel A:分類, B:縮寫, C:全稱, D:中文 (從第2列開始)
+    data.slice(1).forEach(row => {
+      if (row[0] && row[1]) {
+        if (!DATA[row[0]]) DATA[row[0]] = [];
+        DATA[row[0]].push({ abbr: row[1], full: row[2] || "", zh: row[3] || "" });
+      }
+    });
+    alert("Excel 資料讀取完成！");
+    renderSearch();
+  };
+  reader.readAsBinaryString(file);
 }
 
-// --- 縮寫查詢渲染 ---
-function renderCats() {
-  const grid = document.getElementById('cat-grid');
-  grid.innerHTML = '';
-  Object.entries(DATA).forEach(([cat, entries]) => {
-    const btn = document.createElement('button');
-    btn.className = 'cat-btn' + (activecat === cat ? ' active' : '');
-    btn.innerHTML = `<span>${cat}</span><span class="count">${entries.length}</span>`;
-    btn.onclick = () => { activecat = (activecat === cat) ? null : cat; renderSearch(); };
-    grid.appendChild(btn);
-  });
-}
+// --- 單獨新增處理 ---
+function openModal() { document.getElementById('modal-overlay').style.display = 'flex'; }
+function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-function renderSearch() {
-  renderCats();
-  const container = document.getElementById('results');
-  const q = query.toLowerCase().trim();
+function saveNewEntry() {
+  const cat = document.getElementById('new-cat').value.trim();
+  const abbr = document.getElementById('new-abbr').value.trim();
+  const full = document.getElementById('new-full').value.trim();
+  const zh = document.getElementById('new-zh').value.trim();
+
+  if (!cat || !abbr) { alert("分類與縮寫為必填"); return; }
+  if (!DATA[cat]) DATA[cat] = [];
+  DATA[cat].push({ abbr, full, zh });
   
-  if (!activecat && !q) {
-    container.innerHTML = '<div style="text-align:center; padding:60px; color:#bbb;">請選擇分類或搜尋</div>';
-    return;
-  }
+  closeModal();
+  renderSearch();
+}
 
+// --- 渲染邏輯 ---
+function renderSearch() {
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = Object.entries(DATA).map(([cat, list]) => `
+    <button class="cat-btn ${activeCat === cat ? 'active' : ''}" onclick="filterCat('${cat}')">
+      <span>${cat}</span><span class="count">${list.length}</span>
+    </button>
+  `).join('');
+
+  const container = document.getElementById('results');
+  const q = query.toLowerCase();
   let html = '';
-  const cats = activecat ? [activecat] : Object.keys(DATA);
+  const cats = activeCat ? [activeCat] : Object.keys(DATA);
+
   cats.forEach(cat => {
     const filtered = DATA[cat].filter(i => !q || i.abbr.toLowerCase().includes(q) || i.full.toLowerCase().includes(q));
     if (filtered.length > 0) {
-      html += `<div style="font-size:12px; font-weight:700; color:#888; margin:15px 0 8px;">${cat}</div>`;
+      html += `<div style="font-size:11px; font-weight:700; color:#888; margin:15px 0 5px;">${cat}</div>`;
       filtered.forEach((e, i) => {
         const id = cat + i;
         html += `
@@ -210,27 +228,30 @@ function renderSearch() {
               <span class="full-preview">${e.full}</span>
             </div>
             <div class="entry-detail">
-              <p><strong>英文全稱:</strong> ${e.full}</p>
-              ${e.zh ? `<p style="margin-top:8px;"><strong>中文說明:</strong> ${e.zh}</p>` : ''}
+              <p><strong>全稱:</strong> ${e.full}</p>
+              <p><strong>說明:</strong> ${e.zh || '無'}</p>
             </div>
           </div>`;
       });
     }
   });
-  container.innerHTML = html || '<div style="text-align:center; padding:20px;">無相符內容</div>';
+  container.innerHTML = html;
 }
 
-function toggle(id) {
-  if (openEntries.has(id)) openEntries.delete(id);
-  else openEntries.add(id);
-  renderSearch();
+function renderMfg() {
+  document.getElementById('mfg-list').innerHTML = MFG_LEVELS.map(item => `
+    <div class="mfg-card">
+      <div class="mfg-badge">${item.lv}</div>
+      <div style="font-weight:700; margin-bottom:8px;">${item.title}</div>
+      <div style="font-size:13px; color:#666;">${item.desc}</div>
+    </div>
+  `).join('');
 }
 
-document.getElementById('search').addEventListener('input', (e) => {
-  query = e.target.value;
-  if (query) activecat = null;
-  renderSearch();
-});
+function filterCat(cat) { activeCat = activeCat === cat ? null : cat; renderSearch(); }
+function toggle(id) { if (openEntries.has(id)) openEntries.delete(id); else openEntries.add(id); renderSearch(); }
+
+document.getElementById('search').addEventListener('input', (e) => { query = e.target.value; activeCat = null; renderSearch(); });
 
 renderSearch();
 </script>
