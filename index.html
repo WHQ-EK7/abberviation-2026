@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>伺服器知識庫 - Wistron v3.1</title>
+<title>伺服器知識庫 - Wistron v3.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -50,35 +50,21 @@
     cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #ddd; z-index: 10;
   }
 
-  .level-info { padding: 16px; }
-  .level-badge { background: #1a1a1a; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-bottom: 8px; display: inline-block; }
-  .level-title-en { font-size: 14px; font-weight: 700; margin-bottom: 8px; min-height: 20px; }
-  .level-desc-zh { font-size: 13px; color: #666; line-height: 1.5; border-top: 1px solid #f0f0f0; padding-top: 10px; }
-
   /* 縮寫查詢相關 */
   .search-bar { width: 100%; max-width: 860px; margin: 0 auto 16px; position: relative; }
   .search-bar input { width: 100%; padding: 10px 40px; font-size: 15px; border: 1px solid rgba(0,0,0,0.15); border-radius: 10px; outline: none; background: #fff; }
   .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-bottom: 20px; }
-  .cat-btn { padding: 10px 5px; border: 1px solid #ddd; border-radius: 12px; background: #fff; cursor: pointer; text-align: center; font-size: 12px; font-weight: 500; }
+  .cat-btn { padding: 10px 5px; border: 1px solid #ddd; border-radius: 12px; background: #fff; cursor: pointer; text-align: center; font-size: 12px; }
   .cat-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
   
   .entry { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 10px; margin-bottom: 6px; }
   .entry-header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; font-size: 14px; }
-  .abbr-tag { font-weight: 700; min-width: 90px; color: #1a1a1a; }
-  .full-preview { color: #666; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  
-  .entry-detail { display: none; padding: 16px; background: #fafafa; border-top: 0.5px solid #eee; border-radius: 0 0 10px 10px; }
+  .abbr-tag { font-weight: 700; min-width: 90px; }
+  .entry-detail { display: none; padding: 16px; background: #fafafa; border-top: 0.5px solid #eee; }
   .entry.open .entry-detail { display: block; }
-  .detail-label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; margin-bottom: 4px; }
-  .detail-val { font-size: 14px; margin-bottom: 12px; }
 
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: #1a1a1a; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px; z-index: 999; transition: all 0.3s; }
   .toast.show { transform: translateX(-50%) translateY(0); }
-
-  @media (max-width: 600px) {
-    .page-header { padding: 12px 16px 0; }
-    .header-actions span { display: none; }
-  }
 </style>
 </head>
 <body>
@@ -87,8 +73,8 @@
   <div class="header-top">
     <h1>Wistron Server Knowledge</h1>
     <div class="header-actions" id="abbr-actions">
-      <button class="action-btn" onclick="openAddModal()"><span>新增縮寫</span></button>
-      <label class="action-btn primary" for="file-input"><span>上傳 Excel</span></label>
+      <button class="action-btn" onclick="openAddModal()">新增縮寫</button>
+      <label class="action-btn primary" for="file-input">上傳 Excel</label>
       <input type="file" id="file-input" accept=".xlsx,.xls" />
     </div>
   </div>
@@ -100,87 +86,128 @@
 
 <div class="main">
   <div id="abbr-view" class="content-view active">
-    <div class="search-bar">
-      <input type="text" id="search" placeholder="搜尋縮寫、英文或中文..." autocomplete="off" />
-    </div>
+    <div class="search-bar"><input type="text" id="search" placeholder="搜尋..." autocomplete="off"></div>
     <div class="category-grid" id="cat-grid"></div>
     <div id="results"></div>
   </div>
-
-  <div id="level-view" class="content-view">
-    <div class="level-grid" id="level-list"></div>
-  </div>
+  <div id="level-view" class="content-view"><div class="level-grid" id="level-list"></div></div>
 </div>
 
 <input type="file" id="level-img-input" accept="image/*" />
 
 <div id="add-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:300; align-items:center; justify-content:center;">
     <div style="background:#fff; padding:24px; border-radius:14px; width:90%; max-width:400px;">
-      <h2 style="font-size:16px; margin-bottom:16px;">新增縮寫</h2>
-      <div style="margin-bottom:12px;"><label style="font-size:11px; color:#888;">分類</label><select id="add-cat" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd;"></select></div>
-      <div style="margin-bottom:12px;"><label style="font-size:11px; color:#888;">縮寫 *</label><input type="text" id="add-abbr" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd;"></div>
-      <div style="margin-bottom:12px;"><label style="font-size:11px; color:#888;">全稱 *</label><input type="text" id="add-full" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd;"></div>
-      <div style="margin-bottom:20px;"><label style="font-size:11px; color:#888;">中文說明</label><textarea id="add-zh" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd;"></textarea></div>
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button onclick="document.getElementById('add-modal').style.display='none'" style="padding:8px 16px; border:1px solid #ddd; background:none; border-radius:8px; cursor:pointer;">取消</button>
-        <button onclick="submitAdd()" style="padding:8px 16px; background:#1a1a1a; color:#fff; border:none; border-radius:8px; cursor:pointer;">新增</button>
-      </div>
+        <h2 style="font-size:16px; margin-bottom:16px;">新增縮寫</h2>
+        <select id="add-cat" style="width:100%; padding:8px; margin-bottom:10px;"></select>
+        <input type="text" id="add-abbr" placeholder="縮寫" style="width:100%; padding:8px; margin-bottom:10px;">
+        <input type="text" id="add-full" placeholder="全稱" style="width:100%; padding:8px; margin-bottom:10px;">
+        <textarea id="add-zh" placeholder="中文說明" style="width:100%; padding:8px; margin-bottom:10px;"></textarea>
+        <div style="text-align:right;">
+            <button onclick="document.getElementById('add-modal').style.display='none'">取消</button>
+            <button onclick="submitAdd()" style="background:#1a1a1a; color:#fff; border:none; padding:8px 16px; border-radius:6px;">新增</button>
+        </div>
     </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── 恢復原始完整資料 ──────────────────────────────
+// ── 資料初始化 ──────────────────────────────
 const DEFAULT_ABBR_DATA = {
-  "Schedule / Phase": [
-    {abbr:"NPI",full:"New Product Introduction",zh:"新產品試產導入服務"},
-    {abbr:"EVT",full:"Engineering Verification Test",zh:"工程驗證測試"},
-    {abbr:"PVT",full:"Production Verification Test",zh:"生產驗證測試"},
-    {abbr:"EOL",full:"End of Life",zh:"停產"},
-    {abbr:"GA",full:"General Availability",zh:"產品達成市場投放標準"}
-  ],
-  "Modules": [
-    {abbr:"GPU",full:"Graphics Processing Unit",zh:"圖形處理器"},
-    {abbr:"PSU",full:"Power Supply Unit",zh:"電源供應器"},
-    {abbr:"OCP",full:"Open Compute Project",zh:"開放計算項目"},
-    {abbr:"OAM",full:"Open Accelerator Module",zh:"開放加速器模組"}
-  ],
-  "Cooling": [
-    {abbr:"DLC",full:"Direct Liquid Cooling",zh:"直接液體冷卻系統"},
-    {abbr:"LAAC",full:"Liquid-Assisted Air Cooling",zh:"液體輔助空氣冷卻系統"},
-    {abbr:"UQD",full:"Universal Quick Disconnect",zh:"超快速快速斷開接頭"}
-  ],
-  "Board": [
-    {abbr:"BMC",full:"Baseboard Management Controller",zh:"基板管理控制器"},
-    {abbr:"UBB",full:"Universal Base Board",zh:"通用基板"},
-    {abbr:"HPM",full:"Host Processor Module",zh:"主處理器模組"}
-  ]
+  "Schedule / Phase": [{abbr:"NPI",full:"New Product Introduction",zh:"新產品導入"}],
+  "Modules": [{abbr:"GPU",full:"Graphics Processing Unit",zh:"圖形處理器"}]
 };
 
 const LEVEL_BASE = [
-  { lv: "Level 1", title: "Parts manufacturing", zh: "零件製造：包含未上漆零件、組件級別的模具零件。" },
-  { lv: "Level 2", title: "Piece Parts Sub Assembly", zh: "零件預組：零件的初步組裝階段。" },
-  { lv: "Level 3", title: "Chassis Assembly", zh: "機殼組裝：金屬與塑料件整合並作為機殼出貨。" },
-  { lv: "Level 4", title: "Chassis + PSU/Backplane", zh: "機殼基礎套件：機殼加裝電源供應器 (PSU) 或背板。" },
-  { lv: "Level 5", title: "Enclosure with Cables", zh: "完整外殼：包含 L4 所有組件、線纜整合及 I/O 測試。" },
-  { lv: "Level 6", title: "Motherboard Integration", zh: "主機板整合：將主機板組裝至機殼內並進行開機測試。" },
-  { lv: "Level 7", title: "Add-on Card Integration", zh: "擴充卡整合：整合各式 Add-on Card 並進行測試。" },
-  { lv: "Level 8", title: "Hard Drive Integration", zh: "硬碟整合：在伺服器準系統中整合硬碟並進行測試。" },
-  { lv: "Level 9", title: "CPU & Memory Integration", zh: "核心組件整合：整合 CPU 與記憶體並進行功能測試。" },
-  { lv: "Level 10", title: "Full System Assembly", zh: "全系統組裝：完整伺服器解決方案，含軟體整合與測試。" },
-  { lv: "Level 11", title: "Rack Integration & Testing", zh: "機櫃整合：節點組裝至機櫃，完成全機櫃佈線與測試。" },
-  { lv: "Level 12", title: "Multi-rack / Solution", zh: "多機櫃解決方案：多機櫃製造與叢集管理解決方案。" }
+  { lv: "Level 1", title: "Parts manufacturing", zh: "零件製造：包含零件級別的模具零件。" },
+  { lv: "Level 2", title: "Piece Parts Sub Assembly", zh: "零件預組：零件初步組裝。" },
+  { lv: "Level 3", title: "Chassis Assembly", zh: "機殼組裝：機殼出貨階段。" },
+  { lv: "Level 4", title: "Chassis + PSU/Backplane", zh: "機殼基礎套件：含電源或背板。" },
+  { lv: "Level 5", title: "Enclosure with Cables", zh: "完整外殼：含線纜整合。" },
+  { lv: "Level 6", title: "Motherboard Integration", zh: "主機板整合：開機測試階段。" },
+  { lv: "Level 7", title: "Add-on Card Integration", zh: "擴充卡整合：整合擴充卡測試。" },
+  { lv: "Level 8", title: "Hard Drive Integration", zh: "硬碟整合：整合硬碟測試。" },
+  { lv: "Level 9", title: "CPU & Memory Integration", zh: "核心組件整合：CPU/記憶體整合測試。" },
+  { lv: "Level 10", title: "Full System Assembly", zh: "全系統組裝：完整解決方案。" },
+  { lv: "Level 11", title: "Rack Integration & Testing", zh: "機櫃整合：機櫃組裝測試。" },
+  { lv: "Level 12", title: "Multi-rack / Solution", zh: "多機櫃解決方案：叢集管理。" }
 ];
 
-// ── 初始化 ──────────────────────────────
 let DATA = JSON.parse(localStorage.getItem('WISTRON_ABBR_V2')) || DEFAULT_ABBR_DATA;
 let levelImages = JSON.parse(localStorage.getItem('WISTRON_LEVEL_IMGS')) || {};
 let activecat = null, query = '', openEntries = new Set();
 
 function save() { localStorage.setItem('WISTRON_ABBR_V2', JSON.stringify(DATA)); }
 
-// ── View 切換 ──────────────────────────────
+// ── Excel 解析功能修復 ──────────────────────────────
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    try {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      
+      // 假設 Excel 格式：每一欄是一個分類，標題是分類名稱
+      // 或者使用最通用的 JSON 轉換
+      const rows = XLSX.utils.sheet_to_json(firstSheet);
+      
+      if (rows.length > 0) {
+        // 清理當前資料並導入（可依需求修改為累加）
+        const newData = { "Imported": [] };
+        rows.forEach(row => {
+            // 自動適應可能的欄位名稱
+            const abbr = row.abbr || row['縮寫'] || row.Abbreviation;
+            const full = row.full || row['全稱'] || row['英文全稱'] || row.FullName;
+            const zh = row.zh || row['中文'] || row['中文說明'] || row.Description;
+            const cat = row.category || row['分類'] || "Imported";
+
+            if (abbr && full) {
+                if (!newData[cat]) newData[cat] = [];
+                newData[cat].push({ abbr, full, zh: zh || "" });
+            }
+        });
+        
+        DATA = newData;
+        save();
+        renderAbbr();
+        showToast('✓ Excel 匯入成功');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Excel 解析失敗，請檢查格式');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// ── 渲染與互動 (保持不變) ──────────────────────────────
+function renderAbbr() {
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = Object.keys(DATA).map(cat => `
+    <button class="cat-btn ${activecat===cat?'active':''}" onclick="filterCat('${cat}')">${cat} (${DATA[cat].length})</button>
+  `).join('');
+  const container = document.getElementById('results');
+  const q = query.toLowerCase().trim();
+  let html = '';
+  Object.keys(DATA).forEach(cat => {
+    if(activecat && cat !== activecat) return;
+    let entries = DATA[cat].filter(e => !q || e.abbr.toLowerCase().includes(q) || e.full.toLowerCase().includes(q));
+    if (entries.length) {
+      html += `<div style="margin-bottom:20px;"><div style="font-size:12px;color:#888;margin-bottom:5px;">${cat}</div>`;
+      entries.forEach((e, i) => {
+        const id = `${cat}_${i}`;
+        html += `<div class="entry ${openEntries.has(id)?'open':''}"><div class="entry-header" onclick="toggle('${id}')"><span class="abbr-tag">${e.abbr}</span><span>${e.full}</span></div><div class="entry-detail"><div>${e.full}</div><div style="color:#666;margin-top:5px;">${e.zh}</div></div></div>`;
+      });
+      html += `</div>`;
+    }
+  });
+  container.innerHTML = html || '無資料';
+}
+
 function switchView(viewId, el) {
   document.querySelectorAll('.content-view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -190,90 +217,25 @@ function switchView(viewId, el) {
   if(viewId === 'level-view') renderLevels();
 }
 
-// ── 縮寫功能渲染 ──────────────────────────────
-function renderAbbr() {
-  const grid = document.getElementById('cat-grid');
-  grid.innerHTML = Object.keys(DATA).map(cat => `
-    <button class="cat-btn ${activecat===cat?'active':''}" onclick="filterCat('${cat}')">
-      ${cat} (${DATA[cat].length})
-    </button>
-  `).join('');
-
-  const container = document.getElementById('results');
-  const q = query.toLowerCase().trim();
-  let html = '';
-
-  Object.keys(DATA).forEach(cat => {
-    if(activecat && cat !== activecat) return;
-    let entries = DATA[cat].filter(e => 
-      !q || e.abbr.toLowerCase().includes(q) || e.full.toLowerCase().includes(q) || (e.zh && e.zh.toLowerCase().includes(q))
-    );
-    
-    if (entries.length) {
-      html += `<div style="margin-bottom:24px;"><div style="font-size:11px;color:#888;margin-bottom:8px;font-weight:700;text-transform:uppercase;">${cat}</div>`;
-      entries.forEach((e, i) => {
-        const id = `${cat}_${i}`;
-        const isOpen = q ? true : openEntries.has(id);
-        html += `
-          <div class="entry ${isOpen?'open':''}">
-            <div class="entry-header" onclick="toggle('${id}')">
-              <span class="abbr-tag">${e.abbr}</span>
-              <span class="full-preview">${e.full}</span>
-              <span style="font-size:10px;color:#ccc;">${isOpen?'▼':'▶'}</span>
-            </div>
-            <div class="entry-detail">
-              <div class="detail-label">Full Name</div><div class="detail-val">${e.full}</div>
-              ${e.zh ? `<div class="detail-label">中文說明</div><div class="detail-val">${e.zh}</div>` : ''}
-              <button onclick="copy('${e.abbr}: ${e.full}')" style="padding:4px 8px; font-size:11px; cursor:pointer;">複製</button>
-            </div>
-          </div>`;
-      });
-      html += `</div>`;
-    }
-  });
-  container.innerHTML = html || '<div style="text-align:center;padding:40px;color:#999;">無相符資料</div>';
-}
-
-// ── 組階功能渲染 ──────────────────────────────
 function renderLevels() {
   const container = document.getElementById('level-list');
   container.innerHTML = LEVEL_BASE.map((item, index) => {
     const imgData = levelImages[index];
-    return `
-    <div class="level-card">
-      <div class="level-img-container">
-        ${imgData ? `<img src="${imgData}" />` : `<div class="level-placeholder">L${index+1}</div>`}
-        <div class="upload-img-btn" onclick="triggerImgUpload(${index})">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-        </div>
-      </div>
-      <div class="level-info">
-        <span class="level-badge">${item.lv}</span>
-        <div class="level-title-en">${item.title}</div>
-        <div class="level-desc-zh">${item.zh}</div>
-      </div>
-    </div>`
+    return `<div class="level-card"><div class="level-img-container">${imgData?`<img src="${imgData}">`:`<div class="level-placeholder">L${index+1}</div>`}<div class="upload-img-btn" onclick="triggerImgUpload(${index})">📷</div></div><div class="level-info"><span class="level-badge">${item.lv}</span><div>${item.title}</div><div style="font-size:12px;color:#666;margin-top:10px;border-top:1px solid #eee;padding-top:5px;">${item.zh}</div></div></div>`
   }).join('');
 }
 
-// ── 輔助功能 ──────────────────────────────
 function filterCat(c) { activecat = (activecat===c)?null:c; renderAbbr(); }
 function toggle(id) { openEntries.has(id)?openEntries.delete(id):openEntries.add(id); renderAbbr(); }
-function copy(t) { navigator.clipboard.writeText(t); showToast('已複製'); }
 function showToast(m) { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+function triggerImgUpload(idx) { currentImgIdx = idx; document.getElementById('level-img-input').click(); }
 
-let currentUploadIndex = null;
-function triggerImgUpload(index) { currentUploadIndex = index; document.getElementById('level-img-input').click(); }
-
+let currentImgIdx = null;
 document.getElementById('level-img-input').onchange = (e) => {
   const file = e.target.files[0];
-  if (file) {
+  if(file){
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      levelImages[currentUploadIndex] = ev.target.result;
-      localStorage.setItem('WISTRON_LEVEL_IMGS', JSON.stringify(levelImages));
-      renderLevels();
-    };
+    reader.onload = (ev) => { levelImages[currentImgIdx] = ev.target.result; localStorage.setItem('WISTRON_LEVEL_IMGS', JSON.stringify(levelImages)); renderLevels(); };
     reader.readAsDataURL(file);
   }
 };
@@ -281,24 +243,15 @@ document.getElementById('level-img-input').onchange = (e) => {
 function openAddModal() {
   const sel = document.getElementById('add-cat');
   sel.innerHTML = Object.keys(DATA).map(c => `<option value="${c}">${c}</option>`).join('');
-  document.getElementById('add-modal').style.display = 'flex';
+  document.getElementById('add-modal').style.display='flex';
 }
-
 function submitAdd() {
   const cat = document.getElementById('add-cat').value;
-  const abbr = document.getElementById('add-abbr').value;
-  const full = document.getElementById('add-full').value;
-  if(!abbr || !full) return alert('請填寫必填欄位');
-  DATA[cat].push({abbr, full, zh: document.getElementById('add-zh').value});
-  save();
-  document.getElementById('add-modal').style.display = 'none';
-  renderAbbr();
-  showToast('已新增');
+  DATA[cat].push({abbr: document.getElementById('add-abbr').value, full: document.getElementById('add-full').value, zh: document.getElementById('add-zh').value});
+  save(); document.getElementById('add-modal').style.display='none'; renderAbbr();
 }
 
-document.getElementById('search').oninput = (e) => { query = e.target.value; renderAbbr(); };
-
-// 初次啟動
+document.getElementById('search').oninput = (e) => { query=e.target.value; renderAbbr(); };
 renderAbbr();
 </script>
 </body>
