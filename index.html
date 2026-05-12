@@ -45,7 +45,7 @@
   .action-btn.primary:hover { background: #333; }
   .action-btn.purple { background: #702082; color: #fff; border-color: #702082; }
   .action-btn.purple:hover { background: #5a1a6a; }
-  #abbr-file-input, #cmf-file-input, #level-img-input { display: none; }
+  #abbr-file-input, #cmf-file-input { display: none; }
 
   /* ── Layout ── */
   .main { max-width: 1100px; margin: 0 auto; padding: 16px; }
@@ -103,40 +103,19 @@
   .detail-val { font-size: 14px; line-height: 1.5; margin-bottom: 10px; color: #333; }
   mark { background: #fff176; color: #000; border-radius: 2px; }
 
-  /* ── 組階 L1-L12 ── */
-let levelSingleImg = localStorage.getItem('WISTRON_LEVEL_SINGLE_IMG') || "";
-
-function renderLevels() {
-  const imgEl = document.getElementById('level-full-img');
-  const hintEl = document.getElementById('level-empty-hint');
-  
-  if (levelSingleImg) {
-    imgEl.src = levelSingleImg;
-    imgEl.style.display = 'block';
-    hintEl.style.display = 'none';
-  } else {
-    imgEl.style.display = 'none';
-    hintEl.style.display = 'block';
+  /* ── 組階說明 ── */
+  .level-single-img {
+    width: 100%; background: #fff; border-radius: 12px;
+    border: 0.5px solid rgba(0,0,0,0.1); padding: 24px;
+    text-align: center;
   }
-}
-
-// 修改圖片上傳的監聽器 (對應新的單圖邏輯)
-document.getElementById('level-img-input').addEventListener('change', function() {
-  const file = this.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      levelSingleImg = ev.target.result;
-      localStorage.setItem('WISTRON_LEVEL_SINGLE_IMG', levelSingleImg);
-      renderLevels();
-      showToast('✓ 總表圖片已更新');
-    };
-    reader.readAsDataURL(file);
+  .level-single-img img {
+    max-width: 100%; height: auto; border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   }
-  this.value = '';
-});
-
-// 在 switchView 內呼叫 renderLevels 的邏輯保持不變
+  .level-single-img .level-img-error {
+    padding: 60px 20px; color: #bbb; font-size: 14px;
+  }
 
   /* ── CMF 總表 ── */
   .cmf-toolbar {
@@ -368,7 +347,13 @@ document.getElementById('level-img-input').addEventListener('change', function()
 
   <!-- ② 組階說明 -->
   <div id="level-view" class="content-view">
-    <div class="level-grid" id="level-list"></div>
+    <div class="level-single-img">
+      <img src="levels.png" alt="組裝層級說明 L1–L12"
+           onerror="this.style.display='none'; document.getElementById('level-img-error').style.display='block';" />
+      <div id="level-img-error" class="level-img-error" style="display:none;">
+        找不到圖片，請確認 <code>levels.png</code> 已上傳至 GitHub repository 根目錄
+      </div>
+    </div>
   </div>
 
   <!-- ③ CMF 總表 -->
@@ -415,7 +400,6 @@ document.getElementById('level-img-input').addEventListener('change', function()
   </div>
 </div>
 
-<input type="file" id="level-img-input" accept="image/*" />
 <div class="toast" id="toast"></div>
 
 <script>
@@ -570,23 +554,9 @@ let ABBR_DATA = {
 
 let abbrActivecat = null, abbrQuery = '', abbrOpenEntries = new Set();
 
-// 組階資料
-const LEVEL_BASE = [
-  { lv:"Level 1",  title:"Parts Manufacturing",        zh:"零件製造：包含零件級別的模具零件。" },
-  { lv:"Level 2",  title:"Piece Parts Sub Assembly",   zh:"零件預組：零件初步組裝。" },
-  { lv:"Level 3",  title:"Chassis Assembly",           zh:"機殼組裝：機殼出貨階段。" },
-  { lv:"Level 4",  title:"Chassis + PSU / Backplane",  zh:"機殼基礎套件：含電源或背板。" },
-  { lv:"Level 5",  title:"Enclosure with Cables",      zh:"完整外殼：含線纜整合。" },
-  { lv:"Level 6",  title:"Motherboard Integration",    zh:"主機板整合：開機測試階段。" },
-  { lv:"Level 7",  title:"Add-on Card Integration",    zh:"擴充卡整合：整合擴充卡測試。" },
-  { lv:"Level 8",  title:"Hard Drive Integration",     zh:"硬碟整合：整合硬碟測試。" },
-  { lv:"Level 9",  title:"CPU & Memory Integration",   zh:"核心組件整合：CPU/記憶體整合測試。" },
-  { lv:"Level 10", title:"Full System Assembly",       zh:"全系統組裝：完整解決方案。" },
-  { lv:"Level 11", title:"Rack Integration & Testing", zh:"機櫃整合：機櫃組裝測試。" },
-  { lv:"Level 12", title:"Multi-rack / Solution",      zh:"多機櫃解決方案：叢集管理。" }
-];
-let levelImages = {};
-let currentImgIdx = null;
+// ═══════════════════════════════════════════════════
+// ② 組階說明（靜態圖片 levels.png，無需 JS）
+// ═══════════════════════════════════════════════════
 
 // CMF 資料
 let cmfAllData = [], cmfFiltered = [];
@@ -610,7 +580,7 @@ function switchView(viewId, el) {
   el.classList.add('active');
   document.getElementById('abbr-actions').style.display = (viewId === 'abbr-view') ? 'flex' : 'none';
   document.getElementById('cmf-actions').style.display  = (viewId === 'cmf-view')  ? 'flex' : 'none';
-  if (viewId === 'level-view') renderLevels();
+  if (viewId === 'level-view') {} // 靜態圖片，無需渲染
 }
 
 // ═══════════════════════════════════════════════════
@@ -764,36 +734,6 @@ function submitAdd() {
   document.getElementById('search').value=''; document.getElementById('clear-btn').style.display='none';
   renderAbbr(); showToast('✓ 已新增「'+abbr+'」到 '+cat);
 }
-
-// ═══════════════════════════════════════════════════
-// ② 組階 L1-L12
-// ═══════════════════════════════════════════════════
-function renderLevels() {
-  document.getElementById('level-list').innerHTML = LEVEL_BASE.map((item, index) => {
-    const imgData = levelImages[index];
-    return `<div class="level-card">
-      <div class="level-img-container">
-        ${imgData ? `<img src="${imgData}" alt="${item.lv}">` : `<div class="level-placeholder">L${index+1}</div>`}
-        <div class="upload-img-btn" onclick="triggerImgUpload(${index})" title="上傳圖片">📷</div>
-      </div>
-      <div class="level-info">
-        <span class="level-badge">${item.lv}</span>
-        <div class="level-title">${item.title}</div>
-        <div class="level-zh">${item.zh}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-function triggerImgUpload(idx) { currentImgIdx = idx; document.getElementById('level-img-input').click(); }
-document.getElementById('level-img-input').addEventListener('change', function() {
-  const file = this.files[0];
-  if (file && currentImgIdx !== null) {
-    const reader = new FileReader();
-    reader.onload = ev => { levelImages[currentImgIdx] = ev.target.result; renderLevels(); showToast('✓ 圖片已更新'); };
-    reader.readAsDataURL(file);
-  }
-  this.value = '';
-});
 
 // ═══════════════════════════════════════════════════
 // ③ CMF 總表
