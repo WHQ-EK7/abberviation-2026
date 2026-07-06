@@ -645,6 +645,7 @@ function switchView(viewId, el) {
   document.getElementById('abbr-actions').style.display = (viewId === 'abbr-view') ? 'flex' : 'none';
   document.getElementById('cmf-actions').style.display  = (viewId === 'cmf-view')  ? 'flex' : 'none';
   if (viewId === 'level-view') {} // 靜態圖片，無需渲染
+  if (viewId === 'cmf-view' && cmfAllData.length === 0) initCmf();
 }
 
 // ═══════════════════════════════════════════════════
@@ -1405,20 +1406,22 @@ async function sbDelete(dbId) {
 
 // ── 初始化 ──
 renderAbbr();
-// CMF 資料初始化：優先從 Supabase 載入，fallback 用內建
-(async () => {
-  const loaded = await loadCmfFromSupabase();
-  if (!loaded) {
-    // fallback: 使用內建預設資料
-    cmfAllData = JSON.parse(JSON.stringify(CMF_DEFAULT));
-    cmfFiltered = [...cmfAllData];
-    cmfPopulateFilters();
-    renderCmfTable(cmfFiltered);
-    document.getElementById('cmf-filters').style.display = 'flex';
-    document.getElementById('cmf-summary').style.display = 'flex';
-    document.getElementById('cmf-export-btn').style.display = 'inline-flex';
-  }
-})();
+
+// CMF 初始化：先顯示內建資料，背景同步 Supabase
+function initCmf() {
+  // 先用內建資料立即顯示（不等 Supabase）
+  cmfAllData = JSON.parse(JSON.stringify(CMF_DEFAULT));
+  cmfFiltered = [...cmfAllData];
+  cmfPopulateFilters();
+  renderCmfTable(cmfFiltered);
+  document.getElementById('cmf-filters').style.display = 'flex';
+  document.getElementById('cmf-summary').style.display = 'flex';
+  document.getElementById('cmf-export-btn').style.display = 'inline-flex';
+
+  // 背景嘗試從 Supabase 載入更新版本
+  loadCmfFromSupabase().catch(e => console.warn('Supabase load skipped:', e.message));
+}
+initCmf();
 cmfPopulateFilters();
 renderCmfTable(cmfFiltered);
 document.getElementById('cmf-filters').style.display = 'flex';
