@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Wistron Server Knowledge</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -816,6 +817,34 @@ document.getElementById('cmf-file-input').addEventListener('change', function() 
       if (!rows.length) throw new Error('empty');
       cmfAllData = rows; cmfFiltered = [...rows];
       cmfEditIdx = -1;
+      // 同步至 Supabase
+      try {
+        showToast('正在同步至雲端...');
+        // 清空舊資料
+        await sb.from('cmf_data').delete().gt('id', 0);
+        // 批次寫入（每次 50 筆）
+        const dbRows = rows.map(frontToDbRow);
+        for (let i = 0; i < dbRows.length; i += 50) {
+          const chunk = dbRows.slice(i, i + 50);
+          const { error } = await sb.from('cmf_data').insert(chunk);
+          if (error) throw error;
+        }
+        // 記錄匯入動作
+        await sb.from('cmf_edit_logs').insert([{
+          user_id: currentUser.id,
+          email: currentUser.email,
+          action: 'import',
+          cmf_id: null,
+          before_data: null,
+          after_data: { count: rows.length, source: 'excel_upload' },
+          changed_fields: 'BULK_IMPORT'
+        }]);
+        // 重新從雲端載入確保 ID 正確
+        await loadCmfFromSupabase();
+        showToast('✓ 已同步至雲端，共 ' + rows.length + ' 筆');
+      } catch(e) {
+        showToast('雲端同步失敗: ' + e.message, true);
+      }
 
       cmfPopulateFilters();
       renderCmfTable(cmfFiltered);
@@ -1158,37 +1187,238 @@ document.getElementById('cmf-search').addEventListener('keypress', e => { if (e.
 
 
 // ═══════════════════════════════════════════════════
-// 無需登入：直接使用內建資料
+// Supabase 設定
 // ═══════════════════════════════════════════════════
-let currentUser = { id: 'local', email: 'local' };
-let currentRole = 'admin'; // 所有人皆有完整權限
+const SUPABASE_URL = 'https://kaxyjqkzkvgpuphftlov.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheHlqcWt6a3ZncHVwaGZ0bG92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyODkzMDgsImV4cCI6MjA5ODg2NTMwOH0.m5iXrxEiPJklJUac0ZzI3u-DZE8R3GBw1Re-hKU3Cz4';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = { id: 'anonymous', email: 'anonymous' };
+let currentRole = 'admin';
 
-// DB row → 前端 object (passthrough)
+// ── 從 Supabase 載入 CMF 資料 ──
+async function loadCmfFromSupabase() {
+  try {
+    const { data, error } = await sb.from('cmf_data').select('*').order('id');
+    if (error) throw error;
+    if (data && data.length > 0) {
+      cmfAllData = data.map(dbRowToFront);
+      cmfFiltered = [...cmfAllData];
+      cmfPopulateFilters();
+      renderCmfTable(cmfFiltered);
+      document.getElementById('cmf-filters').style.display = 'flex';
+      document.getElementById('cmf-summary').style.display = 'flex';
+      document.getElementById('cmf-export-btn').style.display = 'inline-flex';
+      showToast('✓ 已從雲端載入 ' + data.length + ' 筆資料');
+      return true;
+    }
+  } catch(e) {
+    console.warn('Supabase 載入失敗，使用內建資料:', e.message);
+  }
+  return false;
+}
+
+// DB row → 前端 object
 function dbRowToFront(row) {
-  return row;
+  const r = row;
+  return {
+    _db_id: r.id,
+    'Brand': r.brand || '',
+    'Material': r.material || '',
+    'Project': r.project || '',
+    'Customer Color Name_PN': r.customer_color_name_pn || '',
+    'Wstron Color_PN': r.wstron_color_pn || '',
+    'Customer Color HEX': r.customer_color_hex || '',
+    'Wstron Color HEX': r.wstron_color_hex || '',
+    'Manufacturing Methods': r.manufacturing_methods || '',
+    'Function': r.function_field || '',
+    'Material SPEC/Apply to.': r.material_spec || '',
+    'OEM Vendor': r.oem_vendor || '',
+    'Finish Applicator': r.finish_applicator || '',
+    'Finish Supplier': r.finish_supplier || '',
+    'Material Supplier': r.material_supplier || '',
+    'Light Source': r.light_source || '',
+    'URL': r.url || '',
+    'image': r.image || '',
+    'Color Images': r.color_images || '',
+    'Sample images': r.sample_images || '',
+    'Standards Color': r.standards_color || '',
+    'Gloss Units': r.gloss_units || '',
+    'Customer_L': r.customer_l || '',
+    'Customer_a': r.customer_a || '',
+    'Customer_b': r.customer_b || '',
+    'Customer_Gloss': r.customer_gloss || '',
+    'Customer_FT': r.customer_ft || '',
+    'WHQ_L': r.whq_l || '',
+    'WHQ_a': r.whq_a || '',
+    'WHQ_b': r.whq_b || '',
+    'WHQ_Gloss': r.whq_gloss || '',
+    'WHQ_FT': r.whq_ft || '',
+    'WZS_L': r.wzs_l || '',
+    'WZS_a': r.wzs_a || '',
+    'WZS_B': r.wzs_b || '',
+    'WZS_Gloss': r.wzs_gloss || '',
+    'WZS_FT': r.wzs_ft || '',
+    'WZS_E': r.wzs_e || '',
+    'FA_L': r.fa_l || '',
+    'FA_a': r.fa_a || '',
+    'FA_b': r.fa_b || '',
+    'FA_Gloss': r.fa_gloss || '',
+    'FA_FT': r.fa_ft || '',
+    'FA_E': r.fa_e || '',
+    'Surface Finishing': r.surface_finishing || '',
+    'Remark': r.remark || '',
+  };
 }
-// 前端 object → DB row (passthrough)
+// 前端 object → DB row
 function frontToDbRow(obj) {
-  return obj;
+  return {
+    brand: obj['Brand'] || '',
+    material: obj['Material'] || '',
+    project: obj['Project'] || '',
+    customer_color_name_pn: obj['Customer Color Name_PN'] || '',
+    wstron_color_pn: obj['Wstron Color_PN'] || '',
+    customer_color_hex: obj['Customer Color HEX'] || '',
+    wstron_color_hex: obj['Wstron Color HEX'] || '',
+    manufacturing_methods: obj['Manufacturing Methods'] || '',
+    function_field: obj['Function'] || '',
+    material_spec: obj['Material SPEC/Apply to.'] || '',
+    oem_vendor: obj['OEM Vendor'] || '',
+    finish_applicator: obj['Finish Applicator'] || '',
+    finish_supplier: obj['Finish Supplier'] || '',
+    material_supplier: obj['Material Supplier'] || '',
+    light_source: obj['Light Source'] || '',
+    url: obj['URL'] || '',
+    image: obj['image'] || '',
+    color_images: obj['Color Images'] || '',
+    sample_images: obj['Sample images'] || '',
+    standards_color: obj['Standards Color'] || '',
+    gloss_units: obj['Gloss Units'] || '',
+    customer_l: obj['Customer_L'] || '',
+    customer_a: obj['Customer_a'] || '',
+    customer_b: obj['Customer_b'] || '',
+    customer_gloss: obj['Customer_Gloss'] || '',
+    customer_ft: obj['Customer_FT'] || '',
+    whq_l: obj['WHQ_L'] || '',
+    whq_a: obj['WHQ_a'] || '',
+    whq_b: obj['WHQ_b'] || '',
+    whq_gloss: obj['WHQ_Gloss'] || '',
+    whq_ft: obj['WHQ_FT'] || '',
+    wzs_l: obj['WZS_L'] || '',
+    wzs_a: obj['WZS_a'] || '',
+    wzs_b: obj['WZS_B'] || '',
+    wzs_gloss: obj['WZS_Gloss'] || '',
+    wzs_ft: obj['WZS_FT'] || '',
+    wzs_e: obj['WZS_E'] || '',
+    fa_l: obj['FA_L'] || '',
+    fa_a: obj['FA_a'] || '',
+    fa_b: obj['FA_b'] || '',
+    fa_gloss: obj['FA_Gloss'] || '',
+    fa_ft: obj['FA_FT'] || '',
+    fa_e: obj['FA_E'] || '',
+    surface_finishing: obj['Surface Finishing'] || '',
+    remark: obj['Remark'] || '',
+  };
 }
-// ── 本地新增（無後端）──
+// ── Supabase 新增 ──
 async function sbInsert(obj) {
-  return Date.now(); // 使用 timestamp 作為暫時 ID
+  const dbRow = frontToDbRow(obj);
+  const { data, error } = await sb.from('cmf_data').insert([dbRow]).select();
+  if (error) throw error;
+  const newId = data[0].id;
+  // 記錄變更
+  try {
+    await sb.from('cmf_edit_logs').insert([{
+      user_id: currentUser.id,
+      email: currentUser.email,
+      action: 'insert',
+      cmf_id: newId,
+      before_data: null,
+      after_data: dbRow,
+      changed_fields: Object.keys(dbRow).filter(k => dbRow[k] !== '').join(',')
+    }]);
+  } catch(e) { console.warn('edit log failed:', e); }
+  return newId;
 }
 
-// ── 本地更新（無後端）──
+// ── Supabase 更新 ──
 async function sbUpdate(dbId, obj) {
-  // 資料已直接更新在 cmfAllData 陣列中
+  // 取得修改前的資料
+  let beforeData = null;
+  try {
+    const { data: bd } = await sb.from('cmf_data').select('*').eq('id', dbId).single();
+    beforeData = bd;
+  } catch(e) {}
+  
+  const afterData = frontToDbRow(obj);
+  const { error } = await sb.from('cmf_data').update(afterData).eq('id', dbId);
+  if (error) throw error;
+
+  // 找出哪些欄位有變更
+  const changedFields = [];
+  if (beforeData) {
+    Object.keys(afterData).forEach(k => {
+      if (String(beforeData[k] || '') !== String(afterData[k] || '')) {
+        changedFields.push(k);
+      }
+    });
+  }
+
+  // 記錄變更
+  try {
+    await sb.from('cmf_edit_logs').insert([{
+      user_id: currentUser.id,
+      email: currentUser.email,
+      action: 'update',
+      cmf_id: dbId,
+      before_data: beforeData,
+      after_data: afterData,
+      changed_fields: changedFields.join(',')
+    }]);
+  } catch(e) { console.warn('edit log failed:', e); }
 }
 
-// ── 本地刪除（無後端）──
+// ── Supabase 刪除 ──
 async function sbDelete(dbId) {
-  // 資料已直接從 cmfAllData 陣列中移除
+  // 取得刪除前的資料
+  let beforeData = null;
+  try {
+    const { data: bd } = await sb.from('cmf_data').select('*').eq('id', dbId).single();
+    beforeData = bd;
+  } catch(e) {}
+
+  const { error } = await sb.from('cmf_data').delete().eq('id', dbId);
+  if (error) throw error;
+
+  // 記錄刪除
+  try {
+    await sb.from('cmf_edit_logs').insert([{
+      user_id: currentUser.id,
+      email: currentUser.email,
+      action: 'delete',
+      cmf_id: dbId,
+      before_data: beforeData,
+      after_data: null,
+      changed_fields: 'ALL'
+    }]);
+  } catch(e) { console.warn('edit log failed:', e); }
 }
 
 // ── 初始化 ──
 renderAbbr();
-// CMF 資料初始化
+// CMF 資料初始化：優先從 Supabase 載入，fallback 用內建
+(async () => {
+  const loaded = await loadCmfFromSupabase();
+  if (!loaded) {
+    // fallback: 使用內建預設資料
+    cmfAllData = JSON.parse(JSON.stringify(CMF_DEFAULT));
+    cmfFiltered = [...cmfAllData];
+    cmfPopulateFilters();
+    renderCmfTable(cmfFiltered);
+    document.getElementById('cmf-filters').style.display = 'flex';
+    document.getElementById('cmf-summary').style.display = 'flex';
+    document.getElementById('cmf-export-btn').style.display = 'inline-flex';
+  }
+})();
 cmfPopulateFilters();
 renderCmfTable(cmfFiltered);
 document.getElementById('cmf-filters').style.display = 'flex';
