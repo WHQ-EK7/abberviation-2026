@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Wistron Server Knowledge — 註冊</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  background:linear-gradient(135deg,#1a0028 0%,#3d0060 50%,#702082 100%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.card{background:#fff;border-radius:20px;padding:48px 44px;width:100%;max-width:420px;
+  box-shadow:0 24px 80px rgba(0,0,0,0.35);margin:20px;}
+.logo{text-align:center;margin-bottom:28px;}
+.logo-icon{width:56px;height:56px;background:linear-gradient(135deg,#702082,#9c27b0);
+  border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;}
+.logo-icon svg{width:28px;height:28px;}
+.logo h1{font-size:20px;font-weight:700;color:#1a1a1a;margin-bottom:4px;}
+.logo p{font-size:13px;color:#888;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:12px;font-weight:600;color:#555;
+  text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;}
+.form-group input{width:100%;padding:12px 14px;font-size:15px;
+  border:1.5px solid #e0e0e0;border-radius:10px;outline:none;
+  transition:all 0.2s;background:#fafafa;font-family:inherit;}
+.form-group input:focus{border-color:#702082;background:#fff;
+  box-shadow:0 0 0 3px rgba(112,32,130,0.1);}
+.hint{font-size:11px;color:#aaa;margin-top:4px;}
+.submit-btn{width:100%;padding:13px;font-size:15px;font-weight:700;
+  background:linear-gradient(135deg,#702082,#9c27b0);color:#fff;
+  border:none;border-radius:10px;cursor:pointer;transition:all 0.2s;margin-top:6px;}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(112,32,130,0.4);}
+.submit-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+.msg{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none;}
+.msg.error{background:#fff0f0;border:1px solid #ffcdd2;color:#c62828;}
+.msg.success{background:#f0fff4;border:1px solid #c8e6c9;color:#1b5e20;}
+.msg.show{display:block;}
+.login-link{text-align:center;font-size:13px;color:#888;margin-top:20px;}
+.login-link a{color:#702082;text-decoration:none;font-weight:600;}
+.login-link a:hover{text-decoration:underline;}
+.pwd-strength{height:4px;border-radius:2px;margin-top:6px;background:#eee;overflow:hidden;}
+.pwd-bar{height:100%;width:0%;border-radius:2px;transition:all 0.3s;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    </div>
+    <h1>建立帳號</h1>
+    <p>Wistron Server Knowledge</p>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="form-group">
+    <label>姓名</label>
+    <input type="text" id="fullname" placeholder="請輸入您的姓名"/>
+  </div>
+  <div class="form-group">
+    <label>公司 Email</label>
+    <input type="email" id="email" placeholder="your@wistron.com"/>
+    <div class="hint">建議使用公司信箱</div>
+  </div>
+  <div class="form-group">
+    <label>密碼</label>
+    <input type="password" id="password" placeholder="至少 8 個字元" oninput="checkPwd(this.value)"/>
+    <div class="pwd-strength"><div class="pwd-bar" id="pwd-bar"></div></div>
+  </div>
+  <div class="form-group">
+    <label>確認密碼</label>
+    <input type="password" id="password2" placeholder="再次輸入密碼"/>
+  </div>
+
+  <button class="submit-btn" id="submit-btn" onclick="doRegister()">建立帳號</button>
+  <div class="login-link">已有帳號？<a href="index.html">返回登入</a></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://kaxyjqkzkvgpuphftlov.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheHlqcWt6a3ZncHVwaGZ0bG92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyODkzMDgsImV4cCI6MjA5ODg2NTMwOH0.m5iXrxEiPJklJUac0ZzI3u-DZE8R3GBw1Re-hKU3Cz4';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 已登入則跳轉
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) location.href = 'app.html';
+})();
+
+function checkPwd(val) {
+  const bar = document.getElementById('pwd-bar');
+  let strength = 0;
+  if (val.length >= 8) strength++;
+  if (/[A-Z]/.test(val)) strength++;
+  if (/[0-9]/.test(val)) strength++;
+  if (/[^A-Za-z0-9]/.test(val)) strength++;
+  const colors = ['#ef5350','#ff9800','#66bb6a','#2e7d32'];
+  const widths = ['25%','50%','75%','100%'];
+  bar.style.width = val ? widths[strength-1] || '25%' : '0%';
+  bar.style.background = val ? colors[strength-1] || '#ef5350' : '';
+}
+
+function showMsg(msg, type) {
+  const el = document.getElementById('msg');
+  el.textContent = msg;
+  el.className = 'msg ' + type + ' show';
+}
+
+async function doRegister() {
+  const fullname = document.getElementById('fullname').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const pwd      = document.getElementById('password').value;
+  const pwd2     = document.getElementById('password2').value;
+  const btn      = document.getElementById('submit-btn');
+
+  if (!fullname) { showMsg('請輸入姓名', 'error'); return; }
+  if (!email)    { showMsg('請輸入 Email', 'error'); return; }
+  if (pwd.length < 8) { showMsg('密碼至少需要 8 個字元', 'error'); return; }
+  if (pwd !== pwd2)   { showMsg('兩次密碼輸入不符', 'error'); return; }
+
+  btn.disabled = true; btn.textContent = '建立中...';
+
+  const { error } = await sb.auth.signUp({
+    email, password: pwd,
+    options: {
+      data: { full_name: fullname, role: 'viewer' }
+    }
+  });
+
+  if (error) {
+    showMsg('註冊失敗：' + error.message, 'error');
+    btn.disabled = false; btn.textContent = '建立帳號';
+  } else {
+    showMsg('✓ 帳號建立成功！正在進入系統...', 'success');
+    setTimeout(() => location.href = 'app.html', 1500);
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+</script>
+</body>
+</html>
