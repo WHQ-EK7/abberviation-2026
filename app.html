@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Wistron Server Knowledge</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -274,25 +273,6 @@
   .toast.error { background: #c0392b; }
 
 
-  /* ── Auth Bar ── */
-  .auth-bar {
-    display:flex; align-items:center; gap:10px;
-    padding-bottom: 12px;
-  }
-  .auth-user { font-size:12px; color:#555; }
-  .auth-role { font-size:11px; font-weight:700; padding:2px 8px;
-    border-radius:10px; }
-  .auth-role.admin { background:#f0e6f5; color:#702082; }
-  .auth-role.viewer { background:#e8f5e9; color:#2e7d32; }
-  .auth-logout { font-size:12px; color:#888; cursor:pointer;
-    text-decoration:underline; background:none; border:none; }
-  .auth-logout:hover { color:#c0392b; }
-  /* viewer 隱藏編輯/刪除按鈕 */
-  body.viewer .cmf-act-edit,
-  body.viewer .cmf-act-delete,
-  body.viewer #abbr-actions button:first-child,
-  body.viewer #cmf-file-input-label { display:none !important; }
-
   @media (max-width: 800px) {
     .page-header { padding: 12px 16px 0; }
     .category-grid { grid-template-columns: repeat(3, 1fr); }
@@ -307,13 +287,7 @@
 <div class="page-header">
   <div class="header-top">
     <h1>Wistron Server Knowledge</h1>
-    <!-- Auth Bar -->
-    <div class="auth-bar" id="auth-bar">
-      <span class="auth-user" id="auth-user-email"></span>
-      <span class="auth-role" id="auth-role-badge"></span>
-      <button class="auth-logout" id="admin-btn" onclick="location.href='admin.html'" style="display:none;color:#702082;font-weight:700;">⚙ 後台</button>
-      <button class="auth-logout" onclick="doLogout()">登出</button>
-    </div>
+
     <!-- 縮寫查詢的操作按鈕 -->
     <div class="header-actions" id="abbr-actions">
       <button class="action-btn" onclick="openAddModal()">
@@ -790,23 +764,7 @@ function toggleAbbr(id) { abbrOpenEntries.has(id)?abbrOpenEntries.delete(id):abb
 document.getElementById('search').addEventListener('input', function() {
   abbrQuery = this.value; if (abbrQuery) abbrActivecat = null; abbrOpenEntries.clear();
   document.getElementById('clear-btn').style.display = abbrQuery ? 'flex' : 'none'; renderAbbr();
-  // 記錄搜尋（debounce 1s）
-  clearTimeout(window._searchLogTimer);
-  if (abbrQuery.length >= 2) {
-    window._searchLogTimer = setTimeout(async () => {
-      if (!currentUser) return;
-      const visible = document.querySelectorAll('#results .entry').length;
-      try {
-        await sb.from('abbr_search_logs').insert([{
-          user_id: currentUser.id,
-          email: currentUser.email,
-          search_query: abbrQuery,
-          category: abbrActivecat || '全部',
-          result_count: visible
-        }]);
-      } catch(e) {}
-    }, 1000);
-  }
+
 });
 document.getElementById('clear-btn').addEventListener('click', function() {
   document.getElementById('search').value=''; abbrQuery=''; this.style.display='none'; renderAbbr();
@@ -858,17 +816,7 @@ document.getElementById('cmf-file-input').addEventListener('change', function() 
       if (!rows.length) throw new Error('empty');
       cmfAllData = rows; cmfFiltered = [...rows];
       cmfEditIdx = -1;
-      // 上傳至 Supabase（admin only）
-      if (currentRole === 'admin') {
-        try {
-          await sb.from('cmf_data').delete().neq('id', 0); // clear all
-          const dbRows = rows.map(frontToDbRow);
-          const chunks = [];
-          for (let i=0; i<dbRows.length; i+=50) chunks.push(dbRows.slice(i,i+50));
-          for (const chunk of chunks) await sb.from('cmf_data').insert(chunk);
-          showToast('✓ CMF 資料已同步至雲端 ' + rows.length + ' 筆');
-        } catch(e) { showToast('雲端同步失敗: ' + e.message, true); }
-      }
+
       cmfPopulateFilters();
       renderCmfTable(cmfFiltered);
       document.getElementById('cmf-filters').style.display = 'flex';
@@ -1210,244 +1158,37 @@ document.getElementById('cmf-search').addEventListener('keypress', e => { if (e.
 
 
 // ═══════════════════════════════════════════════════
-// Supabase 設定
+// 無需登入：直接使用內建資料
 // ═══════════════════════════════════════════════════
-// ── 請換成你自己的 Supabase 專案資訊 ──
-const SUPABASE_URL = 'https://kaxyjqkzkvgpuphftlov.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheHlqcWt6a3ZncHVwaGZ0bG92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyODkzMDgsImV4cCI6MjA5ODg2NTMwOH0.m5iXrxEiPJklJUac0ZzI3u-DZE8R3GBw1Re-hKU3Cz4';
+let currentUser = { id: 'local', email: 'local' };
+let currentRole = 'admin'; // 所有人皆有完整權限
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let currentUser = null;
-let currentRole = 'viewer'; // 'admin' or 'viewer'
-
-// ── 登出 ──
-async function doLogout() {
-  await sb.auth.signOut();
-  location.href = 'index.html';
-}
-
-// ── 初始化：驗證登入、取得角色 ──
-async function initAuth() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { location.href = 'index.html'; return; }
-  currentUser = session.user;
-
-  // 顯示 email
-  document.getElementById('auth-user-email').textContent = currentUser.email;
-
-  // 取得角色 (從 user_metadata 或 profiles 表)
-  const meta = currentUser.user_metadata || {};
-  currentRole = meta.role || 'viewer';
-  const badge = document.getElementById('auth-role-badge');
-  badge.textContent = currentRole === 'admin' ? '管理員' : '一般用戶';
-  badge.className = 'auth-role ' + currentRole;
-  if (currentRole === 'viewer') document.body.classList.add('viewer');
-  if (currentRole === 'admin') {
-    const ab = document.getElementById('admin-btn');
-    if (ab) ab.style.display = 'inline';
-  }
-
-  // 記錄登入
-  try {
-    await sb.from('login_logs').insert([{
-      user_id: currentUser.id,
-      email: currentUser.email,
-      ip_address: '',
-      user_agent: navigator.userAgent,
-      device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop'
-    }]);
-  } catch(e) { console.warn('login log failed:', e.message); }
-
-  // 載入 CMF 資料（優先從 Supabase，fallback 用內建資料）
-  await loadCmfFromSupabase();
-}
-
-// ── 從 Supabase 載入 CMF 資料 ──
-async function loadCmfFromSupabase() {
-  try {
-    const { data, error } = await sb.from('cmf_data').select('*').order('id');
-    if (error) throw error;
-    if (data && data.length > 0) {
-      // 把 DB 欄位映射回前端格式
-      cmfAllData = data.map(dbRowToFront);
-      cmfFiltered = [...cmfAllData];
-      cmfPopulateFilters();
-      renderCmfTable(cmfFiltered);
-      document.getElementById('cmf-filters').style.display = 'flex';
-      document.getElementById('cmf-summary').style.display = 'flex';
-      document.getElementById('cmf-export-btn').style.display = 'inline-flex';
-    }
-  } catch(e) {
-    console.warn('Supabase 載入失敗，使用內建資料:', e.message);
-    // fallback: 使用 CMF_DEFAULT 內建資料
-    cmfAllData = JSON.parse(JSON.stringify(CMF_DEFAULT));
-    cmfFiltered = [...cmfAllData];
-    cmfPopulateFilters();
-    renderCmfTable(cmfFiltered);
-    document.getElementById('cmf-filters').style.display = 'flex';
-    document.getElementById('cmf-summary').style.display = 'flex';
-    document.getElementById('cmf-export-btn').style.display = 'inline-flex';
-  }
-}
-
-// DB row → 前端 object
+// DB row → 前端 object (passthrough)
 function dbRowToFront(row) {
-  return {
-    _db_id: row.id,
-    'Brand': row.brand || '',
-    'Material': row.material || '',
-    'Project': row.project || '',
-    'Customer Color Name_PN': row.customer_color_name_pn || '',
-    'Wstron Color_PN': row.wstron_color_pn || '',
-    'Customer Color HEX': row.customer_color_hex || '',
-    'Wstron Color HEX': row.wstron_color_hex || '',
-    'Manufacturing Methods': row.manufacturing_methods || '',
-    'Function': row.function_field || '',
-    'Material SPEC/Apply to.': row.material_spec || '',
-    'OEM Vendor': row.oem_vendor || '',
-    'Finish Applicator': row.finish_applicator || '',
-    'Finish Supplier': row.finish_supplier || '',
-    'Material Supplier': row.material_supplier || '',
-    'Light Source': row.light_source || '',
-    'Project': row.project || '',
-    'URL': row.url || '',
-    'image': row.image || '',
-    'Color Images': row.color_images || '',
-    'Sample images': row.sample_images || '',
-    'Standards Color': row.standards_color || '',
-    'Gloss Units': row.gloss_units || '',
-    'Customer_L': row.customer_l || '',
-    'Customer_a': row.customer_a || '',
-    'Customer_b': row.customer_b || '',
-    'Customer_Gloss': row.customer_gloss || '',
-    'Customer_FT': row.customer_ft || '',
-    'WHQ_L': row.whq_l || '',
-    'WHQ_a': row.whq_a || '',
-    'WHQ_b': row.whq_b || '',
-    'WHQ_Gloss': row.whq_gloss || '',
-    'WHQ_FT': row.whq_ft || '',
-    'WZS_L': row.wzs_l || '',
-    'WZS_a': row.wzs_a || '',
-    'WZS_B': row.wzs_b || '',
-    'WZS_Gloss': row.wzs_gloss || '',
-    'WZS_FT': row.wzs_ft || '',
-    'WZS_E': row.wzs_e || '',
-    'FA_L': row.fa_l || '',
-    'FA_a': row.fa_a || '',
-    'FA_b': row.fa_b || '',
-    'FA_Gloss': row.fa_gloss || '',
-    'FA_FT': row.fa_ft || '',
-    'Surface Finishing': row.surface_finishing || '',
-    'Remark': row.remark || '',
-  };
+  return row;
 }
-
-// 前端 object → DB row
+// 前端 object → DB row (passthrough)
 function frontToDbRow(obj) {
-  return {
-    brand: obj['Brand'] || '',
-    material: obj['Material'] || '',
-    project: obj['Project'] || '',
-    customer_color_name_pn: obj['Customer Color Name_PN'] || '',
-    wstron_color_pn: obj['Wstron Color_PN'] || '',
-    customer_color_hex: obj['Customer Color HEX'] || '',
-    wstron_color_hex: obj['Wstron Color HEX'] || '',
-    manufacturing_methods: obj['Manufacturing Methods'] || '',
-    function_field: obj['Function'] || '',
-    material_spec: obj['Material SPEC/Apply to.'] || '',
-    oem_vendor: obj['OEM Vendor'] || '',
-    finish_applicator: obj['Finish Applicator'] || '',
-    finish_supplier: obj['Finish Supplier'] || '',
-    material_supplier: obj['Material Supplier'] || '',
-    light_source: obj['Light Source'] || '',
-    url: obj['URL'] || '',
-    image: obj['image'] || '',
-    color_images: obj['Color Images'] || '',
-    sample_images: obj['Sample images'] || '',
-    standards_color: obj['Standards Color'] || '',
-    gloss_units: obj['Gloss Units'] || '',
-    customer_l: obj['Customer_L'] || '',
-    customer_a: obj['Customer_a'] || '',
-    customer_b: obj['Customer_b'] || '',
-    customer_gloss: obj['Customer_Gloss'] || '',
-    customer_ft: obj['Customer_FT'] || '',
-    whq_l: obj['WHQ_L'] || '',
-    whq_a: obj['WHQ_a'] || '',
-    whq_b: obj['WHQ_b'] || '',
-    whq_gloss: obj['WHQ_Gloss'] || '',
-    whq_ft: obj['WHQ_FT'] || '',
-    wzs_l: obj['WZS_L'] || '',
-    wzs_a: obj['WZS_a'] || '',
-    wzs_b: obj['WZS_B'] || '',
-    wzs_gloss: obj['WZS_Gloss'] || '',
-    wzs_ft: obj['WZS_FT'] || '',
-    wzs_e: obj['WZS_E'] || '',
-    fa_l: obj['FA_L'] || '',
-    fa_a: obj['FA_a'] || '',
-    fa_b: obj['FA_b'] || '',
-    fa_gloss: obj['FA_Gloss'] || '',
-    fa_ft: obj['FA_FT'] || '',
-    surface_finishing: obj['Surface Finishing'] || '',
-    remark: obj['Remark'] || '',
-  };
+  return obj;
 }
-
-// ── Supabase 儲存（新增）──
+// ── 本地新增（無後端）──
 async function sbInsert(obj) {
-  const { data, error } = await sb.from('cmf_data').insert([frontToDbRow(obj)]).select();
-  if (error) throw error;
-  const newId = data[0].id;
-  try {
-    await sb.from('cmf_edit_logs').insert([{
-      user_id: currentUser.id, email: currentUser.email,
-      action: 'insert', cmf_id: newId,
-      before_data: null, after_data: frontToDbRow(obj)
-    }]);
-  } catch(e) {}
-  return newId;
+  return Date.now(); // 使用 timestamp 作為暫時 ID
 }
 
-// ── Supabase 儲存（更新）──
+// ── 本地更新（無後端）──
 async function sbUpdate(dbId, obj) {
-  // fetch before data for diff
-  let beforeData = null;
-  try {
-    const { data: bd } = await sb.from('cmf_data').select('*').eq('id', dbId).single();
-    beforeData = bd;
-  } catch(e) {}
-  const { error } = await sb.from('cmf_data').update(frontToDbRow(obj)).eq('id', dbId);
-  if (error) throw error;
-  try {
-    await sb.from('cmf_edit_logs').insert([{
-      user_id: currentUser.id, email: currentUser.email,
-      action: 'update', cmf_id: dbId,
-      before_data: beforeData, after_data: frontToDbRow(obj)
-    }]);
-  } catch(e) {}
+  // 資料已直接更新在 cmfAllData 陣列中
 }
 
-// ── Supabase 刪除 ──
+// ── 本地刪除（無後端）──
 async function sbDelete(dbId) {
-  let beforeData = null;
-  try {
-    const { data: bd } = await sb.from('cmf_data').select('*').eq('id', dbId).single();
-    beforeData = bd;
-  } catch(e) {}
-  const { error } = await sb.from('cmf_data').delete().eq('id', dbId);
-  if (error) throw error;
-  try {
-    await sb.from('cmf_edit_logs').insert([{
-      user_id: currentUser.id, email: currentUser.email,
-      action: 'delete', cmf_id: dbId,
-      before_data: beforeData, after_data: null
-    }]);
-  } catch(e) {}
+  // 資料已直接從 cmfAllData 陣列中移除
 }
 
 // ── 初始化 ──
 renderAbbr();
-initAuth();
-// CMF 預載資料初始化（initAuth 會覆蓋）
+// CMF 資料初始化
 cmfPopulateFilters();
 renderCmfTable(cmfFiltered);
 document.getElementById('cmf-filters').style.display = 'flex';
